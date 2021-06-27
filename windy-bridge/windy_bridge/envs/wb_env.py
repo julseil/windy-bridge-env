@@ -36,7 +36,7 @@ BRIDGE_WIDTH = WIDTH/2
 BRIDGE_LENGTH = LENGTH
 
 SPEED = 5.5
-WIND_VALUES = ornstein_uhlenbeck(0, 100, 1000, 1.1, 0.8, 0.3)
+WIND_VALUES = ornstein_uhlenbeck(0, 100, 1000, 1.1, 0, 0.3)
 CURRENT_WIND = [0]
 
 
