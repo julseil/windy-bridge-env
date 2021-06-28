@@ -32,6 +32,19 @@ def ppo_agent(episodes=1000):
             break
 
 
+def custom_agent(episodes=1000):
+    env = make_vec_env("windy_bridge:windy_bridge-v0")
+    model = PPO("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=25000)
+    obs = env.reset()
+    for e in range(episodes):
+        action, _states = model.predict(obs)
+        obs, rewards, dones, info = env.step(action)
+        env.render()
+        if dones:
+            break
+
+
 if __name__ == "__main__":
     #random_agent()
     ppo_agent()

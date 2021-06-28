@@ -21,6 +21,13 @@ def plot_distribution(_x, _y):
     plt.plot(_x, _y)
     plt.show()
 
-
-x, y = ornstein_uhlenbeck(0, 100, 1000, 1.1, 0, 0.3)
+# [0] start x value;
+# [1] end x value;
+# [2] number of values between [0] and [1];
+# [3] mean reversion speed;
+# [4] mean reversion level;
+# [5] influence of randomness (0 = flat line)
+# (0, total_timesteps/10, total_timesteps, 1.1, 0, 0.3)
+x, y = ornstein_uhlenbeck(0, 2500, 25000, 0.2, 0, 0.3)
+print(y)
 plot_distribution(x, y)

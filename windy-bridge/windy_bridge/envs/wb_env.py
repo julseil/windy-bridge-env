@@ -36,8 +36,9 @@ BRIDGE_WIDTH = WIDTH/2
 BRIDGE_LENGTH = LENGTH
 
 SPEED = 5.5
-WIND_VALUES = ornstein_uhlenbeck(0, 100, 1000, 1.1, 0, 0.3)
-CURRENT_WIND = [0]
+# TODO avoid hardcoding
+# TODO # (0, total_timesteps/10+1, total_timesteps+10, 1.1/0.2, 0, 0.3)
+WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 5000, 50000, 0.2, 0, 0.3)
 
 
 class Bridge:
@@ -86,12 +87,9 @@ class WindyBridgeEnv(gym.Env):
         # TODO richtige Werte fuer observation space?
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(4,), dtype=np.uint8)
+        self.step_count = 0
 
     def step(self, action):
-        global CURRENT_WIND
-        # the action is an angle between 0 and 180 degrees
-        #if action < 0 or action > 180:
-        #    raise Exception("Invalid action.")
         reward = -0.1
         done = False
         info = {}
@@ -111,16 +109,16 @@ class WindyBridgeEnv(gym.Env):
         if not self._detect_fall(x, y):
             self.agent.x = x
             # todo get wind values in sequence not random
-            self.agent.y = y + (random.choice(WIND_VALUES[0])/10)
+            self.agent.y = y + WIND_DISTRIBUTION[1][self.step_count]
             self.agent.pos = (self.agent.x, self.agent.y)
             self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
             reward, done = self._check_collision(reward)
-            #print(self.agent.pos)
 
         else:
             print("Out of bounds")
             done = True
             reward -= 10
+        self.step_count += 1
         return self._get_game_state(), reward, done, info
 
     def reset(self):
