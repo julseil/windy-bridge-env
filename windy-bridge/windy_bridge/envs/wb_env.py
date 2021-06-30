@@ -35,10 +35,10 @@ BRIDGE_COLOR = "#571818"
 BRIDGE_WIDTH = WIDTH/2
 BRIDGE_LENGTH = LENGTH
 
-SPEED = 5.5
+SPEED = 5
 # TODO avoid hardcoding
 # TODO # (0, total_timesteps/10+1, total_timesteps+10, 1.1/0.2, 0, 0.3)
-WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 5000, 50000, 0.2, 0, 0.3)
+WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 30000, 300000, 0.2, 0, 0.3)
 
 
 class Bridge:
@@ -83,39 +83,67 @@ class WindyBridgeEnv(gym.Env):
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
         self.goal = Goal(LENGTH-50, WIDTH/2-GOAL_WIDTH/2)
         self.bridge = Bridge()
-        self.action_space = spaces.Discrete(4)
-        # TODO richtige Werte fuer observation space?
+        self.action_space = spaces.Discrete(8)
+        # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(4,), dtype=np.uint8)
         self.step_count = 0
+
+    def env_step(self, action, counter):
+        if counter > 0:
+            wind_value = WIND_DISTRIBUTION[1][self.step_count]
+            if action == 2:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value
+            if action == 3:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value - SPEED
+            if action == 4:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value + SPEED
+            if action == 5:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value
+            if action == 6:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value - SPEED
+            if action == 7:
+                self.agent.x += SPEED
+                self.agent.y = self.agent.y + wind_value + SPEED
+            self.step_count += 1
+            #self.render(delay=False)
+            self.env_step(action, counter - 1)
 
     def step(self, action):
         reward = -0.1
         done = False
         info = {}
-        x = self.agent.x
-        y = self.agent.y
-        # 0 = right, 1 = left, 2 = up, 3 = down
+        # 0 = left, 1 = right,
+        # 2 = 5x no direction, 3 = 5x left, 4 = 5x right,
+        # 5 = 10x no direction, 6 = 10x left, 7 = 10x right
         if action == 0:
-            x = x + SPEED + SPEED
+            self.agent.y = self.agent.y - SPEED + WIND_DISTRIBUTION[1][self.step_count]
         if action == 1:
-            x = x - SPEED + SPEED
+            self.agent.y = self.agent.y + SPEED + WIND_DISTRIBUTION[1][self.step_count]
         if action == 2:
-            y -= SPEED
-            x += SPEED
+            self.env_step(action, 5)
         if action == 3:
-            y += SPEED
-            x += SPEED
-        if not self._detect_fall(x, y):
-            self.agent.x = x
-            # todo get wind values in sequence not random
-            self.agent.y = y + WIND_DISTRIBUTION[1][self.step_count]
+            self.env_step(action, 5)
+        if action == 4:
+            self.env_step(action, 5)
+        if action == 5:
+            self.env_step(action, 10)
+        if action == 6:
+            self.env_step(action, 10)
+        if action == 7:
+            self.env_step(action, 10)
+        self.agent.x += SPEED
+        if not self._detect_fall(self.agent.x, self.agent.y):
             self.agent.pos = (self.agent.x, self.agent.y)
             self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
             reward, done = self._check_collision(reward)
-
         else:
-            print("Out of bounds")
+            #print("Out of bounds")
             done = True
             reward -= 10
         self.step_count += 1
@@ -147,10 +175,10 @@ class WindyBridgeEnv(gym.Env):
 
     def _check_collision(self, reward):
         if self.agent.rect_agent.colliderect(self.goal.rect_goal):
-            print("Win")
+            #print("Win")
             return reward+10, True
         if not self.agent.rect_agent.colliderect(self.bridge.rect_bridge):
-            print("Fell off")
+            #print("Fell off")
             return reward-10, True
         else:
             return reward, False

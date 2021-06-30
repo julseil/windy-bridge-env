@@ -22,29 +22,29 @@ def random_agent(episodes=1000):
 def ppo_agent(episodes=1000):
     env = make_vec_env("windy_bridge:windy_bridge-v0")
     model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=25000)
+    model.learn(total_timesteps=5000)
     obs = env.reset()
-    for e in range(episodes):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
-        env.render()
-        if dones:
-            break
 
-
-def custom_agent(episodes=1000):
-    env = make_vec_env("windy_bridge:windy_bridge-v0")
-    model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=25000)
-    obs = env.reset()
-    for e in range(episodes):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
-        env.render()
-        if dones:
-            break
+    wins = 0
+    losses = 0
+    for i in range(300):
+        for e in range(episodes):
+            action, _states = model.predict(obs)
+            obs, rewards, done, info = env.step(action)
+            #env.render()
+            if done:
+                if 9.8 < rewards < 10.1:
+                    wins += 1
+                else:
+                    losses += 1
+                break
+    print("wins: %s" % wins)
+    print("losses: %s" % losses)
+    print(wins/(wins+losses))
 
 
 if __name__ == "__main__":
     #random_agent()
     ppo_agent()
+    # TODO graph for agent wins?
+    # TODO 2 seperate trainings? with and without knowledge? is it possible in gym env?
