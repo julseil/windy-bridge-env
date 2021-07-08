@@ -83,7 +83,7 @@ class WindyBridgeEnv(gym.Env):
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
         self.goal = Goal(LENGTH-50, WIDTH/2-GOAL_WIDTH/2)
         self.bridge = Bridge()
-        self.action_space = spaces.Discrete(8)
+        self.action_space = spaces.Discrete(2)
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(4,), dtype=np.uint8)
