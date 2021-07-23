@@ -38,7 +38,7 @@ BRIDGE_LENGTH = LENGTH
 SPEED = 5
 # TODO avoid hardcoding
 # TODO # (0, total_timesteps/10+1, total_timesteps+10, 1.1/0.2, 0, 0.3)
-WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 30000, 300000, 0.2, 0, 0.3)
+WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 30000, 300000, 0.2, 0, 0.3)#
 
 
 class Bridge:
@@ -83,7 +83,7 @@ class WindyBridgeEnv(gym.Env):
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
         self.goal = Goal(LENGTH-50, WIDTH/2-GOAL_WIDTH/2)
         self.bridge = Bridge()
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(8)
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(4,), dtype=np.uint8)
