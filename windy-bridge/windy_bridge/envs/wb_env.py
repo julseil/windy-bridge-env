@@ -8,6 +8,8 @@ import pygame
 import random
 import time
 
+from .ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
+
 # https://www.pik-potsdam.de/members/franke/lecture-sose-2016/introduction-to-python.pdf
 def ornstein_uhlenbeck(t_0, t_end, length, theta, mu, sigma):
     t = np.linspace(t_0, t_end, length) # define time axis
@@ -36,9 +38,6 @@ BRIDGE_WIDTH = WIDTH/2
 BRIDGE_LENGTH = LENGTH
 
 SPEED = 5
-# TODO avoid hardcoding
-# TODO # (0, total_timesteps/10+1, total_timesteps+10, 1.1/0.2, 0, 0.3)
-WIND_DISTRIBUTION = ornstein_uhlenbeck(0, 30000, 300000, 0.2, 0, 0.3)#
 
 
 class Bridge:
@@ -86,12 +85,13 @@ class WindyBridgeEnv(gym.Env):
         self.action_space = spaces.Discrete(8)
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=(4,), dtype=np.uint8)
+                                            shape=(3,), dtype=np.uint8)
         self.step_count = 0
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2)
 
     def env_step(self, action, counter):
         if counter > 0:
-            wind_value = WIND_DISTRIBUTION[1][self.step_count]
+            wind_value = self.noise_distribution.__call__()
             if action == 2:
                 self.agent.x += SPEED
                 self.agent.y = self.agent.y + wind_value
@@ -122,9 +122,9 @@ class WindyBridgeEnv(gym.Env):
         # 2 = 5x no direction, 3 = 5x left, 4 = 5x right,
         # 5 = 10x no direction, 6 = 10x left, 7 = 10x right
         if action == 0:
-            self.agent.y = self.agent.y - SPEED + WIND_DISTRIBUTION[1][self.step_count]
+            self.agent.y = self.agent.y - SPEED + self.noise_distribution.__call__()
         if action == 1:
-            self.agent.y = self.agent.y + SPEED + WIND_DISTRIBUTION[1][self.step_count]
+            self.agent.y = self.agent.y + SPEED + self.noise_distribution.__call__()
         if action == 2:
             self.env_step(action, 5)
         if action == 3:
@@ -137,6 +137,9 @@ class WindyBridgeEnv(gym.Env):
             self.env_step(action, 10)
         if action == 7:
             self.env_step(action, 10)
+
+
+
         self.agent.x += SPEED
         if not self._detect_fall(self.agent.x, self.agent.y):
             self.agent.pos = (self.agent.x, self.agent.y)
@@ -153,8 +156,7 @@ class WindyBridgeEnv(gym.Env):
         initial_state = []
         initial_state.append(0)
         initial_state.append(WIDTH/2-SPRITE_WIDTH/2)
-        initial_state.append(LENGTH-50)
-        initial_state.append(WIDTH/2-GOAL_WIDTH/2)
+        initial_state.append(0)
         self.agent.x = 0
         self.agent.y = WIDTH/2-SPRITE_WIDTH/2
         self.agent.pos = (self.agent.x, self.agent.y)
@@ -189,6 +191,7 @@ class WindyBridgeEnv(gym.Env):
         state = []
         state.append(self.agent.x)
         state.append(self.agent.y)
-        state.append(self.goal.x)
-        state.append(self.goal.y)
+        # TODO decide wether to use previous wind value or current wind value in state
+        #state.append(self.noise_distribution.x_prev)
+        state.append(self.noise_distribution.x)
         return state
