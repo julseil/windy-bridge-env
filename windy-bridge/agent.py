@@ -6,11 +6,6 @@ import matplotlib.pyplot as plt
 import json
 
 
-def write_in_file(name, data):
-    with open("%s.txt" % name, "w+") as writefile:
-        writefile.write(str(data))
-
-
 def plot_results(filename, _x,):
     with open(filename) as file_in:
         _y = json.loads(file_in.read())
@@ -21,33 +16,26 @@ def plot_results(filename, _x,):
 
 
 # todo episodes, learning steps -> check names, check values
-# todo what is number of steps needed for straight line
-def ppo_agent(episodes=1000, learning_steps=1000):
+def ppo_agent(test_runs=100, eval_steps_per_run=200, learning_steps=20000):
+    """ Agent needs 131 steps to go straight to the goal (with SPEED 5)
+    learning_steps can therefore be a rough multiple of 131
+
+    eval_steps_per_run can be slightly higher than 131 to include
+    cases where the agent moves up/down while already being on the same x-coord as the goal """
     env = make_vec_env("windy_bridge:windy_bridge-v0")
     model = PPO("MlpPolicy", env, verbose=1)
     model.learn(total_timesteps=learning_steps)
     obs = env.reset()
 
-    test_runs = 500
-    wins = 0
-    losses = 0
-    avg_reward = 0
     for i in range(test_runs):
-        for e in range(episodes):
+        for e in range(eval_steps_per_run):
             action, _states = model.predict(obs)
             obs, rewards, done, info = env.step(action)
             env.render()
             if done:
-                if 9.8 < rewards < 10.1:
-                    wins += 1
-                else:
-                    losses += 1
-                avg_reward += rewards
                 break
-    avg_reward = avg_reward/test_runs
-    ratio = wins/(wins+losses)
-    return ratio, avg_reward
 
 
 if __name__ == "__main__":
-    ratio, avg_reward = ppo_agent()
+    ppo_agent(test_runs=100)
+

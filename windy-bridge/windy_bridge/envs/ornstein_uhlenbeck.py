@@ -55,7 +55,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.sigma = sigma
         self.dt = dt
         self.x0 = x0
-        self.x = self.x0
+        self.x = 0
         self.reset()
 
     def __call__(self):
