@@ -35,6 +35,7 @@ MAX_AS = MAX_STEP/10
 #MIN_AS = MAX_STEP/10
 #MAX_AS = MAX_STEP/10
 
+
 class Bridge:
     def __init__(self):
         self.x = 0

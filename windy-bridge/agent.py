@@ -4,6 +4,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 import matplotlib.pyplot as plt
 import json
+from windy_bridge.envs.callbacks import CustomCallback
 
 
 def plot_results(filename, _x,):
@@ -16,7 +17,7 @@ def plot_results(filename, _x,):
 
 
 # todo episodes, learning steps -> check names, check values
-def ppo_agent(test_runs=100, eval_steps_per_run=200, learning_steps=20000):
+def ppo_agent_learn(learning_steps=400000):
     """ Agent needs 131 steps to go straight to the goal (with SPEED 5)
     learning_steps can therefore be a rough multiple of 131
 
@@ -24,9 +25,12 @@ def ppo_agent(test_runs=100, eval_steps_per_run=200, learning_steps=20000):
     cases where the agent moves up/down while already being on the same x-coord as the goal """
     env = make_vec_env("windy_bridge:windy_bridge-v0")
     model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=learning_steps)
-    obs = env.reset()
+    callback = CustomCallback()
+    model.learn(total_timesteps=learning_steps, callback=callback)
 
+
+def ppo_agent_test(model, env, test_runs=10, eval_steps_per_run=200):
+    obs = env.reset()
     for i in range(test_runs):
         for e in range(eval_steps_per_run):
             action, _states = model.predict(obs)
@@ -37,5 +41,5 @@ def ppo_agent(test_runs=100, eval_steps_per_run=200, learning_steps=20000):
 
 
 if __name__ == "__main__":
-    ppo_agent(test_runs=100)
+    ppo_agent_learn()
 
