@@ -17,9 +17,8 @@ def plot_results(filename, _x,):
 
 
 # todo episodes, learning steps -> check names, check values
-def ppo_agent_learn(learning_steps=400000):
-    """ Agent needs 131 steps to go straight to the goal (with SPEED 5)
-    learning_steps can therefore be a rough multiple of 131
+def ppo_agent_learn(learning_steps=307200):
+    """ learning steps is a multiple of 2048 (steps before update)
 
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
@@ -27,9 +26,10 @@ def ppo_agent_learn(learning_steps=400000):
     model = PPO("MlpPolicy", env, verbose=1)
     callback = CustomCallback()
     model.learn(total_timesteps=learning_steps, callback=callback)
+    #ppo_agent_test(model, env)
 
 
-def ppo_agent_test(model, env, test_runs=10, eval_steps_per_run=200):
+def ppo_agent_test(model, env, test_runs=50, eval_steps_per_run=1500):
     obs = env.reset()
     for i in range(test_runs):
         for e in range(eval_steps_per_run):

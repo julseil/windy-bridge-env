@@ -1,4 +1,5 @@
 from stable_baselines3.common.callbacks import BaseCallback
+import matplotlib.pyplot as plt
 
 class CustomCallback(BaseCallback):
     """
@@ -9,14 +10,16 @@ class CustomCallback(BaseCallback):
     def __init__(self, verbose=0):
         super(CustomCallback, self).__init__(verbose)
         self.test_runs = 200
-        self.eval_steps_per_run = 1500
+        self.eval_steps_per_run = 400
         self.wins = 0
         self.losses = 0
         self.avg_reward = 0
         self.steps = 0
+        self.avg_commitment = 0
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
+        self.result_list_commitment = []
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
 
@@ -73,7 +76,8 @@ class CustomCallback(BaseCallback):
         self.result_list_wins.append(self.wins)
         self.result_list_reward.append(self.avg_reward)
         self.result_list_steps_per_win.append(self.steps)
-        self.wins, self.losses, self.avg_reward, self.steps = 0, 0, 0, 0
+        self.result_list_commitment.append(self.avg_commitment)
+        self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment = 0, 0, 0, 0, 0
         pass
 
     def _on_training_end(self) -> None:
@@ -84,9 +88,11 @@ class CustomCallback(BaseCallback):
         print(self.result_list_reward)
         print(self.result_list_wins)
         print(self.result_list_steps_per_win)
+        print(self.result_list_commitment)
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
+        self.result_list_commitment = []
         pass
 
     def eval_at(self):
@@ -94,28 +100,39 @@ class CustomCallback(BaseCallback):
         model = self.model
         for i in range(self.test_runs):
             _steps = 0
+            _commitment = 0
             obs = env.reset()
             for e in range(self.eval_steps_per_run):
                 action, _states = model.predict(obs)
                 obs, rewards, done, info = env.step(action)
                 _steps += 1
+                _commitment += int(action[0][1]*10)
                 self.avg_reward += float(rewards)
                 #env.render()
                 if done:
                     if 9.8 < rewards < 10.1:
                         self.wins += 1
-                        self.steps = _steps
+                        self.steps += _steps
                     else:
                         self.losses += 1
-                        self.steps = 0
                     break
-        self.wins = self.wins / self.test_runs
-        self.avg_reward = self.avg_reward / self.test_runs
+            self.avg_commitment += _commitment / _steps
+
         try:
             self.steps = self.steps / self.wins
-        except ZeroDivisionError as zde:
-            self.steps = 0
+        except ZeroDivisionError:
+            self.steps = self.eval_steps_per_run
+        self.wins = self.wins / self.test_runs
+        self.avg_reward = self.avg_reward / self.test_runs
+        self.avg_commitment = self.avg_commitment / self.test_runs
+
+
 
     def plot_results(self):
-        pass
+        y_reward = self.result_list_reward
+        y_steps = self.result_list_steps_per_win
+        y_wins = self.result_list_wins
+        x = [i for i in range(len(y_wins))]
+        plt.plot(x,y_wins)
+        plt.show()
 

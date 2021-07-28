@@ -29,11 +29,11 @@ MAX_STEP = 10
 MIN_AS = 0.1
 MAX_AS = MAX_STEP/10
 # min baseline
-#MIN_AS = 0.1
-#MAX_AS = 0.1
+MIN_AS = 0.1
+MAX_AS = 0.1
 # max baseline
-#MIN_AS = MAX_STEP/10
-#MAX_AS = MAX_STEP/10
+MIN_AS = MAX_STEP/10
+MAX_AS = MAX_STEP/10
 
 
 class Bridge:
@@ -81,13 +81,14 @@ class WindyBridgeEnv(gym.Env):
         self.action_space = spaces.Box(np.array([-0.9, MIN_AS]), np.array([0.9, MAX_AS]))
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=(3,), dtype=np.uint8)
+                                            shape=(2,), dtype=np.uint8)
         self.step_count = 0
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2)
 
     def env_step(self, angle, commitment):
         if commitment > 0:
-            wind_value = self.noise_distribution.__call__() * 10
+            wind_value = self.noise_distribution.__call__() * 5
+            wind_value = 0
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
@@ -120,7 +121,7 @@ class WindyBridgeEnv(gym.Env):
         initial_state = []
         initial_state.append(0)
         initial_state.append(WIDTH/2-SPRITE_WIDTH/2)
-        initial_state.append(0)
+        #initial_state.append(0)
         self.agent.x = 0
         self.agent.y = WIDTH/2-SPRITE_WIDTH/2
         self.agent.pos = (self.agent.x, self.agent.y)
@@ -156,6 +157,6 @@ class WindyBridgeEnv(gym.Env):
         state.append(self.agent.x)
         state.append(self.agent.y)
         # TODO decide wether to use previous wind value or current wind value in state
-        state.append(self.noise_distribution.x_prev)
+        #state.append(self.noise_distribution.x_prev)
         #state.append(self.noise_distribution.x)
         return state

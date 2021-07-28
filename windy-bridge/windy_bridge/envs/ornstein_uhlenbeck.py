@@ -1,6 +1,8 @@
 # https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py#L50
 import numpy as np
-import matplotlib.pyplot as plt
+import numpy.random
+
+numpy.random.seed(1337)
 
 
 class AdaptiveParamNoiseSpec(object):
