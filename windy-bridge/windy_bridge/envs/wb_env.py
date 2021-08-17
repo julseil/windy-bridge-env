@@ -32,8 +32,8 @@ MAX_AS = MAX_STEP/10
 MIN_AS = 0.1
 MAX_AS = 0.1
 # max baseline
-MIN_AS = MAX_STEP/10
-MAX_AS = MAX_STEP/10
+#MIN_AS = MAX_STEP/10
+#MAX_AS = MAX_STEP/10
 
 
 class Bridge:
@@ -87,7 +87,7 @@ class WindyBridgeEnv(gym.Env):
 
     def env_step(self, angle, commitment):
         if commitment > 0:
-            wind_value = self.noise_distribution.__call__() * 5
+            #wind_value = self.noise_distribution.__call__() * 5
             wind_value = 0
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value

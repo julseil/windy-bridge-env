@@ -17,7 +17,7 @@ def plot_results(filename, _x,):
 
 
 # todo episodes, learning steps -> check names, check values
-def ppo_agent_learn(learning_steps=307200):
+def ppo_agent_learn(learning_steps=1024000):
     """ learning steps is a multiple of 2048 (steps before update)
 
     eval_steps_per_run can be slightly higher than 131 to include
@@ -29,7 +29,7 @@ def ppo_agent_learn(learning_steps=307200):
     #ppo_agent_test(model, env)
 
 
-def ppo_agent_test(model, env, test_runs=50, eval_steps_per_run=1500):
+def ppo_agent_test(model, env, test_runs=100, eval_steps_per_run=1500):
     obs = env.reset()
     for i in range(test_runs):
         for e in range(eval_steps_per_run):
@@ -42,4 +42,3 @@ def ppo_agent_test(model, env, test_runs=50, eval_steps_per_run=1500):
 
 if __name__ == "__main__":
     ppo_agent_learn()
-

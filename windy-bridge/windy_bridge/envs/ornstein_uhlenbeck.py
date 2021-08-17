@@ -2,7 +2,7 @@
 import numpy as np
 import numpy.random
 
-numpy.random.seed(1337)
+numpy.random.seed(0)
 
 
 class AdaptiveParamNoiseSpec(object):
