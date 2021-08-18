@@ -26,8 +26,8 @@ MAX_STEP = 10
 MIN_AS = 0.1
 MAX_AS = MAX_STEP/10
 # min baseline
-#MIN_AS = 0.1
-#MAX_AS = 0.1
+MIN_AS = 0.1
+MAX_AS = 0.1
 ## max baseline
 #MIN_AS = MAX_STEP/10
 #MAX_AS = MAX_STEP/10
@@ -81,19 +81,21 @@ class WindyBridgeEnv(gym.Env):
         self.action_space = spaces.Box(np.array([-0.9, MIN_AS]), np.array([0.9, MAX_AS]))
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=(2,), dtype=np.uint8)
+                                            shape=(2,), dtype=np.int32)
         self.step_count = 0
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2)
 
     def env_step(self, angle, commitment):
         if commitment > 0:
-            #wind_value = self.noise_distribution.__call__() * 5
+            # todo * what number to get more varied results?
+            wind_value = self.noise_distribution.__call__() * 5
             wind_value = 0
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             self.agent.x += SPEED * math.cos(math.radians(angle))
+            self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
             self.step_count += 1
             #self.render()
             self.env_step(angle, commitment - 1)
@@ -121,7 +123,6 @@ class WindyBridgeEnv(gym.Env):
         initial_state = []
         initial_state.append(0)
         initial_state.append(WIDTH/2-SPRITE_WIDTH/2)
-        #initial_state.append(0)
         self.agent.x = 0
         self.agent.y = WIDTH/2-SPRITE_WIDTH/2
         self.agent.pos = (self.agent.x, self.agent.y)

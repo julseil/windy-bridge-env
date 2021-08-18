@@ -1,6 +1,7 @@
 from stable_baselines3.common.callbacks import BaseCallback
 import matplotlib.pyplot as plt
 from datetime import datetime
+import time
 
 
 class CustomCallback(BaseCallback):
@@ -12,7 +13,7 @@ class CustomCallback(BaseCallback):
     def __init__(self, verbose=0):
         super(CustomCallback, self).__init__(verbose)
         self.test_runs = 200
-        self.eval_steps_per_run = 250
+        self.eval_steps_per_run = 1000
         self.wins = 0
         self.losses = 0
         self.avg_reward = 0
@@ -78,8 +79,8 @@ class CustomCallback(BaseCallback):
         This event is triggered before updating the policy.
         """
         self.iterator += 1
-        if self.iterator % 50 == 0:
-            print("%s : %s / 1024000" % (str(datetime.now()), self.iterator))
+        if self.iterator % 50 == 0 or self.iterator == 1:
+            print("%s : %s / 500" % (str(datetime.now()), self.iterator))
         self.eval_at()
         self.result_list_wins.append(self.wins)
         self.result_list_reward.append(self.avg_reward)
@@ -127,6 +128,7 @@ class CustomCallback(BaseCallback):
                     else:
                         self.losses += 1
                     break
+
             self.avg_commitment += _commitment / _steps
 
         try:

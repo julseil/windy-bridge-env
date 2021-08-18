@@ -79,7 +79,6 @@ commitment_max_5 = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 
 win_percentage_max_5 = [0.01, 0.025, 0.085, 0.08, 0.15, 0.265, 0.28, 0.26, 0.46, 0.485, 0.585, 0.74, 0.73, 0.79, 0.86, 0.81, 0.85, 0.875, 0.865, 0.845, 0.895, 0.9, 0.91, 0.98, 0.98, 0.98, 0.955, 0.855, 0.92, 0.97, 0.96, 0.995, 0.995, 0.985, 1.0, 0.995, 0.985, 0.97, 0.98, 0.99, 0.995, 0.99, 0.995, 0.995, 0.995, 0.99, 0.995, 0.975, 0.995, 0.975, 0.995, 1.0, 1.0, 0.995, 1.0, 1.0, 0.995, 1.0, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 0.995, 1.0, 1.0, 0.995, 0.995, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.995, 0.995, 1.0, 0.985, 0.985, 0.99, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.99, 0.995, 0.99, 0.95, 0.97, 0.985, 1.0, 0.99, 0.99, 0.99, 0.995, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 
-
 def plot_triple(y1, y2, y3, label):
     if len(y1) == len(y2) == len(y3):
         x = [i for i in range(len(y1))]
@@ -109,27 +108,8 @@ def plot_triple(y1, y2, y3, label):
         print(len(y3))
 
 
-#plot_triple(reward_dynamic, reward_min, reward_max, "Reward")
-#plot_triple(win_percentage_dynamic, win_percentage_min, win_percentage_max, "Win Percentage")
-#plot_triple(commitment_dynamic, commitment_min, commitment_max, "Avg. Commitment")
-#plot_triple(steps_dynamic, steps_min, steps_max, "Avg. Steps per Win")
-
-#plot_triple(reward_dynamic_2, reward_min_2, reward_max_2, "Reward (wind * 7)")
-#plot_triple(win_percentage_dynamic_2, win_percentage_min_2, win_percentage_max_2, "Win Percentage (wind * 7)")
-#plot_triple(commitment_dynamic_2, commitment_min_2, commitment_max_2, "Avg. Commitment (wind * 7)")
-#plot_triple(steps_dynamic_2, steps_min_2, steps_max_2, "Avg. Steps per Win (wind * 7)")
-
-#plot_triple(reward_dynamic_3, reward_min_3, reward_max_3, "Reward (step -0.05)")
-#plot_triple(win_percentage_dynamic_3, win_percentage_min_3, win_percentage_max_3, "Win Percentage (step -0.05)")
-#plot_triple(commitment_dynamic_3, commitment_min_3, commitment_max_3, "Avg. Commitment (step -0.05)")
-#plot_triple(steps_dynamic_3, steps_min_3, steps_max_3, "Avg. Steps per Win (step -0.05)")
-
-#plot_triple(reward_dynamic_4, reward_min_4, reward_max_4, "Reward (2nd seed)")
-#plot_triple(win_percentage_dynamic_4, win_percentage_min_4, win_percentage_max_4, "Win Percentage (2nd seed)")
-#plot_triple(commitment_dynamic_4, commitment_min_4, commitment_max_4, "Avg. Commitment (2nd seed)")
-#plot_triple(steps_dynamic_4, steps_min_4, steps_max_4, "Avg. Steps per Win (2nd seed)")
-
 plot_triple(reward_dynamic_5, reward_min_5, reward_max_5, "Reward (no wind)")
 plot_triple(win_percentage_dynamic_5, win_percentage_min_5, win_percentage_max_5, "Win Percentage (no wind)")
 plot_triple(commitment_dynamic_5, commitment_min_5, commitment_max_5, "Avg. Commitment (no wind)")
 plot_triple(steps_dynamic_5, steps_min_5, steps_max_5, "Avg. Steps per Win (no wind)")
+

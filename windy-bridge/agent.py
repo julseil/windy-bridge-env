@@ -29,19 +29,6 @@ def ppo_agent_learn(learning_steps=1024000):
         model = PPO("MlpPolicy", env, verbose=0)
         callback = CustomCallback()
         model.learn(total_timesteps=learning_steps, callback=callback)
-        # testing is handled in callbacks
-        #ppo_agent_test(model, env)
-
-
-def ppo_agent_test(model, env, test_runs=100, eval_steps_per_run=1000):
-    obs = env.reset()
-    for i in range(test_runs):
-        for e in range(eval_steps_per_run):
-            action, _states = model.predict(obs)
-            obs, rewards, done, info = env.step(action)
-            env.render()
-            if done:
-                break
 
 
 if __name__ == "__main__":
