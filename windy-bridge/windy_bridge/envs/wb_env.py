@@ -1,11 +1,8 @@
 import math
-import sys
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
+from gym import spaces
 import numpy as np
 import pygame
-import random
 import time
 
 from .ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
@@ -29,11 +26,14 @@ MAX_STEP = 10
 MIN_AS = 0.1
 MAX_AS = MAX_STEP/10
 # min baseline
-MIN_AS = 0.1
-MAX_AS = 0.1
-# max baseline
+#MIN_AS = 0.1
+#MAX_AS = 0.1
+## max baseline
 #MIN_AS = MAX_STEP/10
 #MAX_AS = MAX_STEP/10
+
+MIN_ASS = [0.1, 0.1, MAX_STEP/10]
+MAX_ASS = [MAX_STEP/10, 0.1, MAX_STEP/10]
 
 
 class Bridge:

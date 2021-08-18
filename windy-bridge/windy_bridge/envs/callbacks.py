@@ -1,5 +1,7 @@
 from stable_baselines3.common.callbacks import BaseCallback
 import matplotlib.pyplot as plt
+from datetime import datetime
+
 
 class CustomCallback(BaseCallback):
     """
@@ -10,7 +12,7 @@ class CustomCallback(BaseCallback):
     def __init__(self, verbose=0):
         super(CustomCallback, self).__init__(verbose)
         self.test_runs = 200
-        self.eval_steps_per_run = 400
+        self.eval_steps_per_run = 250
         self.wins = 0
         self.losses = 0
         self.avg_reward = 0
@@ -20,6 +22,9 @@ class CustomCallback(BaseCallback):
         self.result_list_wins = []
         self.result_list_steps_per_win = []
         self.result_list_commitment = []
+        self.last_trajectories = []
+        self.trajectory_number = 10
+        self.iterator = 0
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
 
@@ -72,6 +77,9 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before updating the policy.
         """
+        self.iterator += 1
+        if self.iterator % 50 == 0:
+            print("%s : %s / 1024000" % (str(datetime.now()), self.iterator))
         self.eval_at()
         self.result_list_wins.append(self.wins)
         self.result_list_reward.append(self.avg_reward)
@@ -84,11 +92,10 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
-        self.plot_results()
-        print(self.result_list_reward)
-        print(self.result_list_wins)
-        print(self.result_list_steps_per_win)
-        print(self.result_list_commitment)
+        #self.plot_results()
+        self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
+                           steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
+                           trajectory=self.last_trajectories)
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
@@ -98,9 +105,11 @@ class CustomCallback(BaseCallback):
     def eval_at(self):
         env = self.model.get_env()
         model = self.model
+        self.last_trajectories = [None] * self.trajectory_number
         for i in range(self.test_runs):
             _steps = 0
             _commitment = 0
+            trajectory = []
             obs = env.reset()
             for e in range(self.eval_steps_per_run):
                 action, _states = model.predict(obs)
@@ -108,8 +117,10 @@ class CustomCallback(BaseCallback):
                 _steps += 1
                 _commitment += int(action[0][1]*10)
                 self.avg_reward += float(rewards)
+                trajectory.append(list(obs[0]))
                 #env.render()
                 if done:
+                    self.last_trajectories[i % self.trajectory_number] = trajectory
                     if 9.8 < rewards < 10.1:
                         self.wins += 1
                         self.steps += _steps
@@ -126,13 +137,24 @@ class CustomCallback(BaseCallback):
         self.avg_reward = self.avg_reward / self.test_runs
         self.avg_commitment = self.avg_commitment / self.test_runs
 
-
-
     def plot_results(self):
         y_reward = self.result_list_reward
         y_steps = self.result_list_steps_per_win
         y_wins = self.result_list_wins
         x = [i for i in range(len(y_wins))]
-        plt.plot(x,y_wins)
+        plt.plot(x, y_wins)
         plt.show()
 
+    def write_results(self, rewards, wins, steps_per_win, commitment, trajectory):
+        now = datetime.now()
+        dt_string = now.strftime("%Y_%m_%d-%H%M%S")
+        with open("logs/rewards_{}.txt".format(dt_string), "w") as a:
+            a.write(str(rewards))
+        with open("logs/wins_{}.txt".format(dt_string), "w") as b:
+            b.write(str(wins))
+        with open("logs/steps_per_win_{}.txt".format(dt_string), "w") as c:
+            c.write(str(steps_per_win))
+        with open("logs/commitment_{}.txt".format(dt_string), "w") as d:
+            d.write(str(commitment))
+        with open("logs/trajectory_{}.txt".format(dt_string), "w") as e:
+            e.write(str(trajectory))

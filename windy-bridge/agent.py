@@ -16,20 +16,24 @@ def plot_results(filename, _x,):
     plt.show()
 
 
-# todo episodes, learning steps -> check names, check values
 def ppo_agent_learn(learning_steps=1024000):
+    # choosing handpicked seeds for reproducibility
+    # todo are env seeds enough? is numpy seed also necessary?
+    seeds = [33, 105, 74, 8, 21]
     """ learning steps is a multiple of 2048 (steps before update)
-
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
-    env = make_vec_env("windy_bridge:windy_bridge-v0")
-    model = PPO("MlpPolicy", env, verbose=1)
-    callback = CustomCallback()
-    model.learn(total_timesteps=learning_steps, callback=callback)
-    #ppo_agent_test(model, env)
+    for seed in seeds:
+        env = make_vec_env("windy_bridge:windy_bridge-v0")
+        env.seed(seed)
+        model = PPO("MlpPolicy", env, verbose=0)
+        callback = CustomCallback()
+        model.learn(total_timesteps=learning_steps, callback=callback)
+        # testing is handled in callbacks
+        #ppo_agent_test(model, env)
 
 
-def ppo_agent_test(model, env, test_runs=100, eval_steps_per_run=1500):
+def ppo_agent_test(model, env, test_runs=100, eval_steps_per_run=1000):
     obs = env.reset()
     for i in range(test_runs):
         for e in range(eval_steps_per_run):
