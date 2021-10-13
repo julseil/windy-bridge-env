@@ -1,6 +1,7 @@
 import math
 import gym
 from gym import spaces
+from gym.utils import seeding
 import numpy as np
 import pygame
 import time
@@ -23,8 +24,8 @@ SPEED = 5
 MAX_STEP = 10
 # action space shape
 # normal
-MIN_AS = 0.1
-MAX_AS = MAX_STEP/10
+#MIN_AS = 0.1
+#MAX_AS = MAX_STEP/10
 # min baseline
 #MIN_AS = 0.1
 #MAX_AS = 0.1
@@ -32,8 +33,9 @@ MAX_AS = MAX_STEP/10
 #MIN_AS = MAX_STEP/10
 #MAX_AS = MAX_STEP/10
 
-MIN_ASS = [0.1, 0.1, MAX_STEP/10]
-MAX_ASS = [MAX_STEP/10, 0.1, MAX_STEP/10]
+
+MIN_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": 0.1}
+MAX_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": MAX_STEP/10}
 
 
 class Bridge:
@@ -72,23 +74,24 @@ class Goal:
 
 
 class WindyBridgeEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, mode="N/A"):
         super(WindyBridgeEnv, self).__init__()
+        self.mode = mode
+        self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
         self.render_delay = 0.2
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
         self.goal = Goal(LENGTH-50, WIDTH/2-GOAL_WIDTH/2)
         self.bridge = Bridge()
-        self.action_space = spaces.Box(np.array([-0.9, MIN_AS]), np.array([0.9, MAX_AS]))
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
-        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2)
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2, seed=0)
 
     def env_step(self, angle, commitment):
         if commitment > 0:
             # todo * what number to get more varied results?
-            wind_value = self.noise_distribution.__call__() * 5
+            wind_value = self.noise_distribution.__call__() * 3
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
@@ -98,6 +101,15 @@ class WindyBridgeEnv(gym.Env):
             self.step_count += 1
             #self.render()
             self.env_step(angle, commitment - 1)
+
+    def mode(self, mode):
+        self.mode = mode
+        self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
+        return mode
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
 
     def step(self, action):
         reward = -0.1

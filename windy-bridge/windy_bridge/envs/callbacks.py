@@ -10,8 +10,9 @@ class CustomCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, verbose=0):
+    def __init__(self, seed, verbose=0):
         super(CustomCallback, self).__init__(verbose)
+        self.seed = seed
         self.test_runs = 200
         self.eval_steps_per_run = 1000
         self.wins = 0
@@ -78,9 +79,9 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before updating the policy.
         """
-        self.iterator += 1
-        if self.iterator % 50 == 0 or self.iterator == 1:
-            print("%s : %s / 500" % (str(datetime.now()), self.iterator))
+        #self.iterator += 1
+        #if self.iterator % 50 == 0 or self.iterator == 1:
+        #    print("%s : %s / 500" % (str(datetime.now()), self.iterator))
         self.eval_at()
         self.result_list_wins.append(self.wins)
         self.result_list_reward.append(self.avg_reward)
@@ -106,6 +107,7 @@ class CustomCallback(BaseCallback):
     def eval_at(self):
         env = self.model.get_env()
         model = self.model
+        env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
         for i in range(self.test_runs):
             _steps = 0
