@@ -112,7 +112,9 @@ class WindyBridgeEnv(gym.Env):
         return [seed]
 
     def step(self, action):
-        reward = -0.1
+        # todo change step reward back
+        # reward = -0.1
+        reward = -0.05
         done = False
         info = {}
         commitment = int(action[1]*10)

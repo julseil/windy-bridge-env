@@ -42,5 +42,6 @@ def ppo_agent_learn(seeds, modes, learning_steps=1024000): #1024000
 
 if __name__ == "__main__":
     seeds = [33, 105, 74, 8, 21]
+    #seeds = [67, 200, 19, 4, 115]
     modes = ["min", "max", "dynamic"]
     ppo_agent_learn(seeds, modes)
