@@ -26,6 +26,8 @@ class CustomCallback(BaseCallback):
         self.result_list_commitment = []
         self.last_trajectories = []
         self.trajectory_number = 10
+        self.last_distribution_values = []
+        self.distribution_value_number = 10
         self.iterator = 0
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
@@ -97,7 +99,7 @@ class CustomCallback(BaseCallback):
         #self.plot_results()
         self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
                            steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
-                           trajectory=self.last_trajectories)
+                           trajectory=self.last_trajectories, distribution=self.last_distribution_values)
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
@@ -109,10 +111,12 @@ class CustomCallback(BaseCallback):
         model = self.model
         env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
+        self.last_distribution_values = [None] * self.distribution_value_number
         for i in range(self.test_runs):
             _steps = 0
             _commitment = 0
             trajectory = []
+            distribution = []
             obs = env.reset()
             for e in range(self.eval_steps_per_run):
                 action, _states = model.predict(obs)
@@ -121,9 +125,11 @@ class CustomCallback(BaseCallback):
                 _commitment += int(action[0][1]*10)
                 self.avg_reward += float(rewards)
                 trajectory.append(list(obs[0]))
+                distribution.append(list(info[0]["wind_values"]))
                 #env.render()
                 if done:
                     self.last_trajectories[i % self.trajectory_number] = trajectory
+                    self.last_distribution_values[i % self.distribution_value_number] = distribution
                     if 9.8 < rewards < 10.1:
                         self.wins += 1
                         self.steps += _steps
@@ -149,7 +155,7 @@ class CustomCallback(BaseCallback):
         plt.plot(x, y_wins)
         plt.show()
 
-    def write_results(self, rewards, wins, steps_per_win, commitment, trajectory):
+    def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution):
         now = datetime.now()
         dt_string = now.strftime("%Y_%m_%d-%H%M%S")
         with open("logs/rewards_{}.txt".format(dt_string), "w") as a:
@@ -162,3 +168,5 @@ class CustomCallback(BaseCallback):
             d.write(str(commitment))
         with open("logs/trajectory_{}.txt".format(dt_string), "w") as e:
             e.write(str(trajectory))
+        with open("logs/distribution_{}.txt".format(dt_string), "w") as f:
+            f.write(str(distribution))

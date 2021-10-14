@@ -87,6 +87,7 @@ class WindyBridgeEnv(gym.Env):
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2, seed=0)
+        self.wind_distribution_values = []
 
     def env_step(self, angle, commitment):
         if commitment > 0:
@@ -100,6 +101,7 @@ class WindyBridgeEnv(gym.Env):
             self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
             self.step_count += 1
             #self.render()
+            self.wind_distribution_values.append(wind_value)
             self.env_step(angle, commitment - 1)
 
     def mode(self, mode):
@@ -116,10 +118,11 @@ class WindyBridgeEnv(gym.Env):
         # reward = -0.1
         reward = -0.05
         done = False
-        info = {}
         commitment = int(action[1]*10)
         angle = action[0] * 100
         self.env_step(angle, commitment)
+        info = {"wind_values": self.wind_distribution_values}
+        self.wind_distribution_values = []
 
         if not self._detect_fall(self.agent.x, self.agent.y):
             self.agent.pos = (self.agent.x, self.agent.y)
@@ -170,7 +173,7 @@ class WindyBridgeEnv(gym.Env):
         state = []
         state.append(self.agent.x)
         state.append(self.agent.y)
-        # TODO decide wether to use previous wind value or current wind value in state
+        # TODO decide whether to use previous wind value or current wind value in state
         #state.append(self.noise_distribution.x_prev)
         #state.append(self.noise_distribution.x)
         return state
