@@ -22,17 +22,6 @@ BRIDGE_LENGTH = LENGTH
 
 SPEED = 5
 MAX_STEP = 10
-# action space shape
-# normal
-#MIN_AS = 0.1
-#MAX_AS = MAX_STEP/10
-# min baseline
-MIN_AS = 0.1
-MAX_AS = 0.1
-## max baseline
-#MIN_AS = MAX_STEP/10
-#MAX_AS = MAX_STEP/10
-
 
 MIN_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": 0.1}
 MAX_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": MAX_STEP}

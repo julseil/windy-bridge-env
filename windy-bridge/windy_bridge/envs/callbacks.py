@@ -96,7 +96,6 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
-        #self.plot_results()
         self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
                            steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
                            trajectory=self.last_trajectories, distribution=self.last_distribution_values)
@@ -146,14 +145,6 @@ class CustomCallback(BaseCallback):
         self.wins = self.wins / self.episodes
         self.avg_reward = self.avg_reward / self.episodes
         self.avg_commitment = self.avg_commitment / self.episodes
-
-    def plot_results(self):
-        y_reward = self.result_list_reward
-        y_steps = self.result_list_steps_per_win
-        y_wins = self.result_list_wins
-        x = [i for i in range(len(y_wins))]
-        plt.plot(x, y_wins)
-        plt.show()
 
     def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution):
         now = datetime.now()
