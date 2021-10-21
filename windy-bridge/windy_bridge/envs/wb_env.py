@@ -27,8 +27,8 @@ MAX_STEP = 10
 #MIN_AS = 0.1
 #MAX_AS = MAX_STEP/10
 # min baseline
-#MIN_AS = 0.1
-#MAX_AS = 0.1
+MIN_AS = 0.1
+MAX_AS = 0.1
 ## max baseline
 #MIN_AS = MAX_STEP/10
 #MAX_AS = MAX_STEP/10
@@ -157,6 +157,7 @@ class WindyBridgeEnv(gym.Env):
             return True
 
     def _check_collision(self, reward):
+        print(self.bridge.rect_bridge)
         if self.agent.rect_agent.colliderect(self.goal.rect_goal):
             #print("Win")
             return reward+10, True
