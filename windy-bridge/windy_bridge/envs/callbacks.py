@@ -13,7 +13,7 @@ class CustomCallback(BaseCallback):
     def __init__(self, seed, verbose=0):
         super(CustomCallback, self).__init__(verbose)
         self.seed = seed
-        self.test_runs = 200
+        self.episodes = 200
         self.eval_steps_per_run = 1000
         self.wins = 0
         self.losses = 0
@@ -112,7 +112,7 @@ class CustomCallback(BaseCallback):
         env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
         self.last_distribution_values = [None] * self.distribution_value_number
-        for i in range(self.test_runs):
+        for i in range(self.episodes):
             _steps = 0
             _commitment = 0
             trajectory = []
@@ -143,9 +143,9 @@ class CustomCallback(BaseCallback):
             self.steps = self.steps / self.wins
         except ZeroDivisionError:
             self.steps = self.eval_steps_per_run
-        self.wins = self.wins / self.test_runs
-        self.avg_reward = self.avg_reward / self.test_runs
-        self.avg_commitment = self.avg_commitment / self.test_runs
+        self.wins = self.wins / self.episodes
+        self.avg_reward = self.avg_reward / self.episodes
+        self.avg_commitment = self.avg_commitment / self.episodes
 
     def plot_results(self):
         y_reward = self.result_list_reward
