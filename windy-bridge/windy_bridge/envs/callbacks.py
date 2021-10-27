@@ -14,7 +14,7 @@ class CustomCallback(BaseCallback):
         super(CustomCallback, self).__init__(verbose)
         self.seed = seed
         self.episodes = 200
-        self.eval_steps_per_run = 1000
+        self.eval_steps_per_episode = 1000
         self.wins = 0
         self.losses = 0
         self.avg_reward = 0
@@ -96,7 +96,6 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
-        #self.plot_results()
         self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
                            steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
                            trajectory=self.last_trajectories, distribution=self.last_distribution_values)
@@ -118,7 +117,7 @@ class CustomCallback(BaseCallback):
             trajectory = []
             distribution = []
             obs = env.reset()
-            for e in range(self.eval_steps_per_run):
+            for e in range(self.eval_steps_per_episode):
                 action, _states = model.predict(obs)
                 obs, rewards, done, info = env.step(action)
                 _steps += 1
@@ -130,7 +129,7 @@ class CustomCallback(BaseCallback):
                 if done:
                     self.last_trajectories[i % self.trajectory_number] = trajectory
                     self.last_distribution_values[i % self.distribution_value_number] = distribution
-                    if 9.8 < rewards < 10.1:
+                    if e >= self.eval_steps_per_episode-1:
                         self.wins += 1
                         self.steps += _steps
                     else:
@@ -142,18 +141,10 @@ class CustomCallback(BaseCallback):
         try:
             self.steps = self.steps / self.wins
         except ZeroDivisionError:
-            self.steps = self.eval_steps_per_run
+            self.steps = self.eval_steps_per_episode
         self.wins = self.wins / self.episodes
         self.avg_reward = self.avg_reward / self.episodes
         self.avg_commitment = self.avg_commitment / self.episodes
-
-    def plot_results(self):
-        y_reward = self.result_list_reward
-        y_steps = self.result_list_steps_per_win
-        y_wins = self.result_list_wins
-        x = [i for i in range(len(y_wins))]
-        plt.plot(x, y_wins)
-        plt.show()
 
     def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution):
         now = datetime.now()

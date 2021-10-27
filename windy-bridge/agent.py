@@ -7,7 +7,7 @@ import json
 from windy_bridge.envs.callbacks import CustomCallback
 
 
-def ppo_agent_learn(seeds, modes, learning_steps=1024000):
+def ppo_agent_learn(seeds, modes, learning_steps=737280): # 1024000 737280
     """ learning steps is a multiple of 2048 (steps before update)
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
@@ -21,6 +21,7 @@ def ppo_agent_learn(seeds, modes, learning_steps=1024000):
             env.seed(seed)
             env.action_space.seed(seed)
             env.observation_space.seed(seed)
+            # todo test A2C
             model = PPO("MlpPolicy", env, verbose=0, seed=seed)
             callback = CustomCallback(seed=seed)
             model.learn(total_timesteps=learning_steps, callback=callback)
@@ -31,5 +32,4 @@ def ppo_agent_learn(seeds, modes, learning_steps=1024000):
 if __name__ == "__main__":
     seeds = [33, 105, 74, 8, 21]
     modes = ["min", "max", "dynamic"]
-    modes = ["dynamic"]
     ppo_agent_learn(seeds, modes)

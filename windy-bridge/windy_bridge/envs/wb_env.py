@@ -9,12 +9,10 @@ import time
 from .ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
 
 LENGTH = 750
-WIDTH = 250
+WIDTH = 240
 SCREEN = pygame.display.set_mode((LENGTH, WIDTH))
 SPRITE_IMAGE = pygame.image.load("windy_bridge/envs/sprite.png")
 SPRITE_WIDTH = 50
-GOAL_IMAGE = pygame.image.load("windy_bridge/envs/flag.png")
-GOAL_WIDTH = 50
 
 BRIDGE_COLOR = "#571818"
 BRIDGE_WIDTH = WIDTH/2
@@ -22,17 +20,6 @@ BRIDGE_LENGTH = LENGTH
 
 SPEED = 5
 MAX_STEP = 10
-# action space shape
-# normal
-#MIN_AS = 0.1
-#MAX_AS = MAX_STEP/10
-# min baseline
-MIN_AS = 0.1
-MAX_AS = 0.1
-## max baseline
-#MIN_AS = MAX_STEP/10
-#MAX_AS = MAX_STEP/10
-
 
 MIN_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": 0.1}
 MAX_AS = {"min": 0.1, "max": MAX_STEP/10, "dynamic": MAX_STEP}
@@ -55,22 +42,12 @@ class Agent:
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
+        self.old_x = 0
         self.pos = (self.x, self.y)
         self.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.x, self.y))
 
     def draw_agent(self):
         SCREEN.blit(SPRITE_IMAGE, (self.x, self.y))
-
-
-class Goal:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.pos = (self.x, self.y)
-        self.rect_goal = GOAL_IMAGE.get_rect(topleft=(self.x, self.y))
-
-    def draw_goal(self):
-        SCREEN.blit(GOAL_IMAGE, (self.x, self.y))
 
 
 class WindyBridgeEnv(gym.Env):
@@ -80,16 +57,17 @@ class WindyBridgeEnv(gym.Env):
         self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
         self.render_delay = 0.2
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
-        self.goal = Goal(LENGTH-50, WIDTH/2-GOAL_WIDTH/2)
         self.bridge = Bridge()
         # TODO richtige Werte fuer observation space? Do not hardcode size of actionspace
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
+        self.max_steps = 1000000
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2, seed=0)
         self.wind_distribution_values = []
+        self.done = False
 
-    def env_step(self, angle, commitment):
+    def env_step(self, angle, commitment, reward):
         if commitment > 0:
             # todo * what number to get more varied results?
             wind_value = self.noise_distribution.__call__() * 3
@@ -102,7 +80,14 @@ class WindyBridgeEnv(gym.Env):
             self.step_count += 1
             #self.render()
             self.wind_distribution_values.append(wind_value)
-            self.env_step(angle, commitment - 1)
+            if self.step_count >= self.max_steps:
+                self.done = True
+                print(f"Maximum number of steps ({self.max_steps}) was reached")
+                return
+            if self._check_collision(reward=reward)[1]:
+                return
+            else:
+                self.env_step(angle, commitment - 1, reward)
 
     def mode(self, mode):
         self.mode = mode
@@ -114,56 +99,55 @@ class WindyBridgeEnv(gym.Env):
         return [seed]
 
     def step(self, action):
-        # todo change step reward back
-        reward = -0.1
-        done = False
+        self.done = False
+        reward = -1
         commitment = int(action[1]*10)
         angle = action[0] * 100
-        self.env_step(angle, commitment)
+        self.env_step(angle, commitment, reward)
+        reward += (self.agent.x - self.agent.old_x)/5
+        self.agent.old_x = self.agent.x
         info = {"wind_values": self.wind_distribution_values}
         self.wind_distribution_values = []
-
-        if not self._detect_fall(self.agent.x, self.agent.y):
-            self.agent.pos = (self.agent.x, self.agent.y)
-            self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
-            reward, done = self._check_collision(reward)
-        else:
-            #print("Out of bounds")
-            done = True
-            reward -= 10
+        self.agent.pos = (self.agent.x, self.agent.y)
+        self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
         self.step_count += 1
-        return self._get_game_state(), reward, done, info
+        return self._get_game_state(), reward, self.done, info
 
     def reset(self):
         initial_state = []
         initial_state.append(0)
         initial_state.append(WIDTH/2-SPRITE_WIDTH/2)
         self.agent.x = 0
+        self.agent.old_x = 0
         self.agent.y = WIDTH/2-SPRITE_WIDTH/2
         self.agent.pos = (self.agent.x, self.agent.y)
+        self.step_count = 0
         return initial_state
 
     def render(self, close=False, delay=True):
-        SCREEN.fill("white")
+        SCREEN.fill("black")
         if delay:
             time.sleep(self.render_delay)
         self.bridge.draw_bridge()
         self.agent.draw_agent()
-        self.goal.draw_goal()
         pygame.display.update()
 
-    def _detect_fall(self, x, y):
-        if x > LENGTH or y > WIDTH:
-            return True
+    #def _check_collision(self, reward):
+    #    if not self.agent.rect_agent.colliderect(self.bridge.rect_bridge):
+    #        print(self.agent.y)
+    #        print("Fell off")
+    #        self.done = True
+    #        return reward-100, True
+    #    else:
+    #        self.done = False
+    #        return reward, False
 
     def _check_collision(self, reward):
-        if self.agent.rect_agent.colliderect(self.goal.rect_goal):
-            #print("Win")
-            return reward+10, True
-        if not self.agent.rect_agent.colliderect(self.bridge.rect_bridge):
-            #print("Fell off")
-            return reward-10, True
+        if self.agent.y > BRIDGE_WIDTH+BRIDGE_WIDTH/2 or self.agent.y < BRIDGE_WIDTH/2:
+            self.done = True
+            return reward-100, True
         else:
+            self.done = False
             return reward, False
 
     def _get_game_state(self):
