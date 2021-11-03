@@ -71,7 +71,6 @@ class WindyBridgeEnv(gym.Env):
         if commitment > 0:
             # todo * what number to get more varied results?
             wind_value = self.noise_distribution.__call__() * 3
-            print(wind_value)
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
