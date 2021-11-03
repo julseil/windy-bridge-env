@@ -8,7 +8,7 @@ import json
 from windy_bridge.envs.callbacks import CustomCallback
 
 
-def ppo_agent_learn(seeds, modes, learning_steps=1024000*2): # 1024000 737280
+def ppo_agent_learn(seeds, modes, learning_steps=1024000*4): # 1024000*2 737280
     """ learning steps is a multiple of 2048 (steps before update)
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
@@ -31,8 +31,6 @@ def ppo_agent_learn(seeds, modes, learning_steps=1024000*2): # 1024000 737280
 
 if __name__ == "__main__":
     seeds = [33, 105, 74, 8, 21]
-    seeds = [123]
-    seeds = [987]
-    seeds = [450]
+    seeds = [12, 99, 4, 34, 15]
     modes = ["min", "max", "dynamic"]
     ppo_agent_learn(seeds, modes)

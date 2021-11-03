@@ -62,7 +62,7 @@ class WindyBridgeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
-        self.max_steps = 100000
+        self.max_steps = 10000
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         self.wind_distribution_values = []
         self.done = False
@@ -70,7 +70,8 @@ class WindyBridgeEnv(gym.Env):
     def env_step(self, angle, commitment, reward):
         if commitment > 0:
             # todo * what number to get more varied results?
-            wind_value = self.noise_distribution.__call__() * 2
+            wind_value = self.noise_distribution.__call__() * 3
+            print(wind_value)
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
@@ -112,15 +113,13 @@ class WindyBridgeEnv(gym.Env):
         self.agent.pos = (self.agent.x, self.agent.y)
         self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
         self.step_count += 1
-        # new distri seed after every done
-        if self.done:
-            self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         return self._get_game_state(), reward, self.done, info
 
     def reset(self):
         initial_state = []
         initial_state.append(0)
         initial_state.append(WIDTH/2-SPRITE_WIDTH/2)
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         self.agent.x = 0
         self.agent.old_x = 0
         self.agent.y = WIDTH/2-SPRITE_WIDTH/2

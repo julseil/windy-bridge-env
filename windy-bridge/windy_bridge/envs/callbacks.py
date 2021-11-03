@@ -17,7 +17,7 @@ class CustomCallback(BaseCallback):
         self.seed = seed
         self.mode = mode
         self.episodes = 200
-        self.eval_steps_per_episode = 10000
+        self.eval_steps_per_episode = 1000
         # metrics
         self.wins = 0
         self.losses = 0
