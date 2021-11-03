@@ -1,13 +1,14 @@
 import gym
 import windy_bridge
 from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.env_util import make_vec_env
 import matplotlib.pyplot as plt
 import json
 from windy_bridge.envs.callbacks import CustomCallback
 
 
-def ppo_agent_learn(seeds, modes, learning_steps=737280): # 1024000 737280
+def ppo_agent_learn(seeds, modes, learning_steps=1024000*2): # 1024000 737280
     """ learning steps is a multiple of 2048 (steps before update)
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
@@ -23,13 +24,15 @@ def ppo_agent_learn(seeds, modes, learning_steps=737280): # 1024000 737280
             env.observation_space.seed(seed)
             # todo test A2C
             model = PPO("MlpPolicy", env, verbose=0, seed=seed)
-            callback = CustomCallback(seed=seed)
+            callback = CustomCallback(seed=seed, mode=mode)
             model.learn(total_timesteps=learning_steps, callback=callback)
-
         i += 1
 
 
 if __name__ == "__main__":
     seeds = [33, 105, 74, 8, 21]
+    seeds = [123]
+    seeds = [987]
+    seeds = [450]
     modes = ["min", "max", "dynamic"]
     ppo_agent_learn(seeds, modes)

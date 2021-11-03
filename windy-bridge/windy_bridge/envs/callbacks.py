@@ -1,3 +1,4 @@
+import os
 from stable_baselines3.common.callbacks import BaseCallback
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -10,21 +11,33 @@ class CustomCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, seed, verbose=0):
+    def __init__(self, seed, mode, verbose=0):
         super(CustomCallback, self).__init__(verbose)
+        # gerneral
         self.seed = seed
+        self.mode = mode
         self.episodes = 200
-        self.eval_steps_per_episode = 1000
+        self.eval_steps_per_episode = 10000
+        # metrics
         self.wins = 0
         self.losses = 0
         self.avg_reward = 0
         self.steps = 0
         self.avg_commitment = 0
+        self.avg_steps_per_episode = 0
+        self.number_of_actions = 0
+        self.distance_traveled = 0
+        # metrics lists
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
         self.result_list_commitment = []
+        self.result_list_steps_per_episode = []
+        self.result_list_actions = []
+        self.result_list_distance = []
         self.last_trajectories = []
+        self.complete_distribution = []
+        # metrics config
         self.trajectory_number = 10
         self.last_distribution_values = []
         self.distribution_value_number = 10
@@ -89,7 +102,11 @@ class CustomCallback(BaseCallback):
         self.result_list_reward.append(self.avg_reward)
         self.result_list_steps_per_win.append(self.steps)
         self.result_list_commitment.append(self.avg_commitment)
-        self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment = 0, 0, 0, 0, 0
+        self.result_list_steps_per_episode.append(self.avg_steps_per_episode)
+        self.result_list_actions.append(self.number_of_actions)
+        self.result_list_distance.append(self.distance_traveled)
+        self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment, \
+        self.avg_steps_per_episode, self.number_of_actions, self.distance_traveled = 0, 0, 0, 0, 0, 0, 0, 0
         pass
 
     def _on_training_end(self) -> None:
@@ -98,45 +115,60 @@ class CustomCallback(BaseCallback):
         """
         self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
                            steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
-                           trajectory=self.last_trajectories, distribution=self.last_distribution_values)
+                           trajectory=self.last_trajectories, distribution=self.last_distribution_values,
+                           avg_steps=self.result_list_steps_per_episode, complete_distribution=self.complete_distribution,
+                           actions=self.result_list_actions, distance=self.result_list_distance)
+        # todo all in one line
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
         self.result_list_commitment = []
+        self.result_list_steps_per_episode = []
+        self.complete_distribution = []
+        self.result_list_actions = []
+        self.result_list_distance = []
         pass
 
     def eval_at(self):
         env = self.model.get_env()
         model = self.model
-        env.seed(self.seed)
+        #env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
         self.last_distribution_values = [None] * self.distribution_value_number
         for i in range(self.episodes):
-            _steps = 0
+            _actions = 0
             _commitment = 0
+            _env_steps = 0
             trajectory = []
             distribution = []
+            dist_per_episode = []
             obs = env.reset()
             for e in range(self.eval_steps_per_episode):
                 action, _states = model.predict(obs)
                 obs, rewards, done, info = env.step(action)
-                _steps += 1
+                _actions += 1
                 _commitment += int(action[0][1]*10)
+                _env_steps += _commitment
                 self.avg_reward += float(rewards)
+                self.distance_traveled += float(info[0]["distance"])
                 trajectory.append(list(obs[0]))
                 distribution.append(list(info[0]["wind_values"]))
                 #env.render()
+                if e >= self.eval_steps_per_episode-1:
+                    done = True
+                    self.wins += 1
+                    self.steps += _actions
                 if done:
                     self.last_trajectories[i % self.trajectory_number] = trajectory
                     self.last_distribution_values[i % self.distribution_value_number] = distribution
-                    if e >= self.eval_steps_per_episode-1:
-                        self.wins += 1
-                        self.steps += _steps
-                    else:
-                        self.losses += 1
                     break
-
-            self.avg_commitment += _commitment / _steps
+            for sublist in distribution:
+                for value in sublist:
+                    dist_per_episode.append(value)
+            self.complete_distribution.append(dist_per_episode)
+            self.avg_steps_per_episode = _env_steps
+            self.number_of_actions = _actions
+            self.avg_commitment += _commitment / _actions
 
         try:
             self.steps = self.steps / self.wins
@@ -144,20 +176,37 @@ class CustomCallback(BaseCallback):
             self.steps = self.eval_steps_per_episode
         self.wins = self.wins / self.episodes
         self.avg_reward = self.avg_reward / self.episodes
+        self.distance_traveled = self.distance_traveled / self.episodes
         self.avg_commitment = self.avg_commitment / self.episodes
+        self.number_of_actions = self.number_of_actions / self.episodes
+        self.avg_steps_per_episode = self.avg_steps_per_episode / self.episodes
 
-    def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution):
+    def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution, avg_steps,
+                      complete_distribution, actions, distance):
+        # todo get mode for dir structure
+        if not os.path.exists("logs/{}".format(self.mode)):
+            os.makedirs("logs/{}".format(self.mode))
         now = datetime.now()
         dt_string = now.strftime("%Y_%m_%d-%H%M%S")
-        with open("logs/rewards_{}.txt".format(dt_string), "w") as a:
+        with open("logs/{}/rewards_{}.txt".format(self.mode, dt_string), "w+") as a:
             a.write(str(rewards))
-        with open("logs/wins_{}.txt".format(dt_string), "w") as b:
+        with open("logs/{}/wins_{}.txt".format(self.mode, dt_string), "w+") as b:
             b.write(str(wins))
-        with open("logs/steps_per_win_{}.txt".format(dt_string), "w") as c:
+        with open("logs/{}/steps_per_win_{}.txt".format(self.mode, dt_string), "w+") as c:
             c.write(str(steps_per_win))
-        with open("logs/commitment_{}.txt".format(dt_string), "w") as d:
+        with open("logs/{}/commitment_{}.txt".format(self.mode, dt_string), "w+") as d:
             d.write(str(commitment))
-        with open("logs/trajectory_{}.txt".format(dt_string), "w") as e:
+        with open("logs/{}/trajectory_{}.txt".format(self.mode, dt_string), "w+") as e:
             e.write(str(trajectory))
-        with open("logs/distribution_{}.txt".format(dt_string), "w") as f:
+        with open("logs/{}/distribution_{}.txt".format(self.mode, dt_string), "w+") as f:
             f.write(str(distribution))
+        with open("logs/{}/avg_steps_per_episode_{}.txt".format(self.mode, dt_string), "w+") as g:
+            g.write(str(avg_steps))
+        with open("logs/{}/complete_distribution_{}.txt".format(self.mode, dt_string), "w+") as h:
+            h.write(str(complete_distribution))
+        with open("logs/{}/number_of_actions_{}.txt".format(self.mode, dt_string), "w+") as i:
+            i.write(str(actions))
+        with open("logs/{}/distance_traveled_{}.txt".format(self.mode, dt_string), "w+") as j:
+            j.write(str(distance))
+
+

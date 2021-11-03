@@ -62,15 +62,15 @@ class WindyBridgeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
-        self.max_steps = 1000000
-        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.2, sigma=0.2, seed=0)
+        self.max_steps = 100000
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         self.wind_distribution_values = []
         self.done = False
 
     def env_step(self, angle, commitment, reward):
         if commitment > 0:
             # todo * what number to get more varied results?
-            wind_value = self.noise_distribution.__call__() * 3
+            wind_value = self.noise_distribution.__call__() * 2
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
@@ -80,7 +80,7 @@ class WindyBridgeEnv(gym.Env):
             self.step_count += 1
             #self.render()
             self.wind_distribution_values.append(wind_value)
-            if self.step_count >= self.max_steps:
+            if self.step_count >= self.max_steps-1:
                 self.done = True
                 print(f"Maximum number of steps ({self.max_steps}) was reached")
                 return
@@ -105,12 +105,16 @@ class WindyBridgeEnv(gym.Env):
         angle = action[0] * 100
         self.env_step(angle, commitment, reward)
         reward += (self.agent.x - self.agent.old_x)/5
+        distance = self.agent.x - self.agent.old_x
         self.agent.old_x = self.agent.x
-        info = {"wind_values": self.wind_distribution_values}
+        info = {"wind_values": self.wind_distribution_values, "distance": distance}
         self.wind_distribution_values = []
         self.agent.pos = (self.agent.x, self.agent.y)
         self.agent.rect_agent = SPRITE_IMAGE.get_rect(topleft=(self.agent.x, self.agent.y))
         self.step_count += 1
+        # new distri seed after every done
+        if self.done:
+            self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         return self._get_game_state(), reward, self.done, info
 
     def reset(self):
@@ -131,16 +135,6 @@ class WindyBridgeEnv(gym.Env):
         self.bridge.draw_bridge()
         self.agent.draw_agent()
         pygame.display.update()
-
-    #def _check_collision(self, reward):
-    #    if not self.agent.rect_agent.colliderect(self.bridge.rect_bridge):
-    #        print(self.agent.y)
-    #        print("Fell off")
-    #        self.done = True
-    #        return reward-100, True
-    #    else:
-    #        self.done = False
-    #        return reward, False
 
     def _check_collision(self, reward):
         if self.agent.y > BRIDGE_WIDTH+BRIDGE_WIDTH/2 or self.agent.y < BRIDGE_WIDTH/2:
