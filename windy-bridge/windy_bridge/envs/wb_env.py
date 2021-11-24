@@ -13,7 +13,6 @@ WIDTH = 240
 SCREEN = pygame.display.set_mode((LENGTH, WIDTH))
 SPRITE_IMAGE = pygame.image.load("windy_bridge/envs/sprite.png")
 SPRITE_WIDTH = 50
-
 BRIDGE_COLOR = "#571818"
 BRIDGE_WIDTH = WIDTH/2
 BRIDGE_LENGTH = LENGTH

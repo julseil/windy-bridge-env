@@ -11,10 +11,10 @@ class CustomCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, seed, mode, verbose=0):
+    def __init__(self, mode, verbose=0, seed=0):
         super(CustomCallback, self).__init__(verbose)
         # gerneral
-        self.seed = seed
+        #self.seed = seed
         self.mode = mode
         self.episodes = 200
         self.eval_steps_per_episode = 1000
