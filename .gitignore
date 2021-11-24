@@ -128,3 +128,4 @@ dmypy.json
 # my ignores
 .idea/
 .DS_store
+windy-bridge-env/windy-bridge/logs
