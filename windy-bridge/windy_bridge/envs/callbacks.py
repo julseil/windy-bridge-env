@@ -16,8 +16,8 @@ class CustomCallback(BaseCallback):
         # gerneral
         #self.seed = seed
         self.mode = mode
-        self.episodes = 200
-        self.eval_steps_per_episode = 1000
+        self.episodes = 1
+        self.eval_steps_per_episode = 2500
         # metrics
         self.wins = 0
         self.losses = 0

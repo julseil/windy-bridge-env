@@ -48,14 +48,15 @@ class NormalActionNoise(ActionNoise):
 
 # Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
-    def __init__(self, mu, sigma, seed=0, theta=.15, dt=1e-2, x0=None):
+    # theta=0.01, mu=0.1, sigma=0.1
+    def __init__(self, seed=0, theta=0.01, mu=0.1, sigma=0.1, dt=1e-2, x0=None):
         self.theta = theta
         self.mu = mu
         self.sigma = sigma
         self.dt = dt
         self.x0 = x0
         self.x = 0
-        self.seed = seed
+        self.seed = np.random.randint(1000)
         np.random.seed(self.seed)
         self.reset()
 

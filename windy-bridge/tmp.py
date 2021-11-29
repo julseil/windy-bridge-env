@@ -5,6 +5,7 @@ import numpy as np
 import scipy as sp
 import json
 import itertools
+import math
 
 
 flex_dir = "logs/dynamic_test/"
@@ -111,3 +112,15 @@ for e in range(0,len(_list)):
         _list[e] = str(_list[e])+"k"
 
 print(_list)
+
+
+wind = 0
+y_pos = 0
+x_pos = 0
+angle = -45
+
+new_y_pos = y_pos + 5 * math.sin(math.radians(angle)) + wind
+new_x_pos = x_pos + 5 * math.cos(math.radians(angle))
+
+print(new_x_pos)
+print(new_y_pos)

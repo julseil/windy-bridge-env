@@ -29,7 +29,8 @@ def plot_distribution(_x, _y):
 # [4] mean reversion level;
 # [5] influence of randomness (0 = flat line)
 # (0, total_timesteps/10, total_timesteps, 1.1, 0, 0.3)
-x, y = ornstein_uhlenbeck(0, 2500, 25000, 0.2, 0, 0.3)
+np.random.seed(0)
+x, y = ornstein_uhlenbeck(0, 2500, 25000, 0.01, 0.1, 0.1)
 print(y)
 plot_distribution(x, y)
 

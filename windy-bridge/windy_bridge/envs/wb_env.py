@@ -53,7 +53,8 @@ class WindyBridgeEnv(gym.Env):
     def __init__(self, mode="N/A"):
         super(WindyBridgeEnv, self).__init__()
         self.mode = mode
-        self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
+        # todo winkel zurück auf -0.9; 0.9
+        self.action_space = spaces.Box(np.array([0, MIN_AS[self.mode]]), np.array([0, MAX_AS[self.mode]]))
         self.render_delay = 0.2
         self.agent = Agent(0, WIDTH/2-SPRITE_WIDTH/2)
         self.bridge = Bridge()
@@ -61,7 +62,7 @@ class WindyBridgeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.int32)
         self.step_count = 0
-        self.max_steps = 10000
+        self.max_steps = 2000
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
         self.wind_distribution_values = []
         self.done = False
@@ -69,7 +70,7 @@ class WindyBridgeEnv(gym.Env):
     def env_step(self, angle, commitment, reward):
         if commitment > 0:
             # todo * what number to get more varied results?
-            wind_value = self.noise_distribution.__call__() * 3
+            wind_value = self.noise_distribution.__call__() # todo * 3
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:
@@ -99,7 +100,7 @@ class WindyBridgeEnv(gym.Env):
 
     def step(self, action):
         self.done = False
-        reward = -1
+        reward = -0.5
         commitment = int(action[1]*10)
         angle = action[0] * 100
         self.env_step(angle, commitment, reward)
@@ -136,7 +137,7 @@ class WindyBridgeEnv(gym.Env):
     def _check_collision(self, reward):
         if self.agent.y > BRIDGE_WIDTH+BRIDGE_WIDTH/2 or self.agent.y < BRIDGE_WIDTH/2:
             self.done = True
-            return reward-100, True
+            return reward-10, True
         else:
             self.done = False
             return reward, False

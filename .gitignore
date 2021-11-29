@@ -129,3 +129,4 @@ dmypy.json
 .idea/
 .DS_store
 windy-bridge-env/windy-bridge/logs
+windy-bridge/logs/
