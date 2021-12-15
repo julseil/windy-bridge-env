@@ -19,7 +19,7 @@ class CustomCallback(BaseCallback):
         # gerneral
         #self.seed = seed
         self.mode = mode
-        self.episodes = 100
+        self.episodes = 1
         self.eval_steps_per_episode = 500
         # metrics
         self.wins = 0
@@ -72,6 +72,7 @@ class CustomCallback(BaseCallback):
         # self.parent = None  # type: Optional[BaseCallback]
 
     def _on_training_start(self) -> None:
+        print("-- training start --")
         """
         This method is called before the first rollout starts.
         """
@@ -103,6 +104,7 @@ class CustomCallback(BaseCallback):
         #self.iterator += 1
         #if self.iterator % 50 == 0 or self.iterator == 1:
         #    print("%s : %s / 500" % (str(datetime.now()), self.iterator))
+        print("-- roll out end --")
         self.eval_at()
         self.result_list_wins.append(self.wins)
         self.result_list_reward.append(self.avg_reward)
@@ -121,6 +123,7 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
+        print("-- training end --")
         self.write_results(rewards=self.result_list_reward, wins=self.result_list_wins,
                            steps_per_win=self.result_list_steps_per_win, commitment=self.result_list_commitment,
                            trajectory=self.last_trajectories, distribution=self.last_distribution_values,
@@ -188,7 +191,6 @@ class CustomCallback(BaseCallback):
                     print(e)
                     self.last_trajectories[i % self.trajectory_number] = trajectory
                     self.last_distribution_values[i % self.distribution_value_number] = distribution
-                    self.avg_difference = self.avg_difference / e
                     break
             for sublist in distribution:
                 for value in sublist:
@@ -197,7 +199,8 @@ class CustomCallback(BaseCallback):
             self.avg_steps_per_episode = _env_steps
             self.number_of_actions = _actions
             self.avg_commitment += _commitment / _actions
-            self.result_list_difference.append(self.avg_difference)
+            self.avg_difference = self.avg_difference / e
+
 
         try:
             self.steps = self.steps / self.wins
