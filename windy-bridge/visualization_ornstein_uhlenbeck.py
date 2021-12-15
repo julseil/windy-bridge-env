@@ -15,7 +15,8 @@ def ornstein_uhlenbeck(t_0, t_end, length, theta, mu, sigma):
     # solve SDE
     for i in range(1, length):
         y[i] = y[i-1] + drift(y[i-1], i*dt)*dt + diffusion(y[i-1], i*dt)*noise[i]
-    return t, y
+    _y = [i * 4 for i in y]
+    return t, _y
 
 
 def plot_distribution(_x, _y):
@@ -29,8 +30,8 @@ def plot_distribution(_x, _y):
 # [4] mean reversion level;
 # [5] influence of randomness (0 = flat line)
 # (0, total_timesteps/10, total_timesteps, 1.1, 0, 0.3)
-np.random.seed(0)
-x, y = ornstein_uhlenbeck(0, 2500, 25000, 0.01, 0.1, 0.1)
+np.random.seed(4225)
+x, y = ornstein_uhlenbeck(0, 2500, 2500, 0.01, 0.1, 0.1)
 print(y)
 plot_distribution(x, y)
 

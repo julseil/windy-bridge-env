@@ -5,7 +5,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from windy_bridge.envs.callbacks import CustomCallback
 
 
-def ppo_agent_learn(modes, learning_steps=1, seeds=None): # 1024000*2 737280
+def ppo_agent_learn(modes, learning_steps=1024000/5, seeds=None): # 1024000*2 737280
     """ learning steps is a multiple of 2048 (steps before update)
     eval_steps_per_run can be slightly higher than 131 to include
     cases where the agent moves up/down while already being on the same x-coord as the goal """
