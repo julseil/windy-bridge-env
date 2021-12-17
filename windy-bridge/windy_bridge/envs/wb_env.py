@@ -63,7 +63,7 @@ class WindyBridgeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.float32)
         self.step_count = 0
-        self.max_steps = 2048*8
+        self.max_steps = 2048
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(theta=0.01, mu=0.1, sigma=0.1, seed=np.random.randint(1000))
         self.wind_distribution_values = []
         self.done = False
@@ -72,7 +72,6 @@ class WindyBridgeEnv(gym.Env):
         if commitment > 0:
             # todo * what number to get more varied results?
             wind_value = self.noise_distribution.__call__() * 4 # todo * 3
-            wind_value = 0
             if angle < 0:
                 self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
             else:

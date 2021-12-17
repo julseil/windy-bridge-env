@@ -16,10 +16,10 @@ class CustomCallback(BaseCallback):
     """
     def __init__(self, mode, verbose=0, seed=0):
         super(CustomCallback, self).__init__(verbose)
-        # gerneral
-        #self.seed = seed
+        # general
+        # self.seed = seed
         self.mode = mode
-        self.episodes = 1
+        self.episodes = 50
         self.eval_steps_per_episode = 500
         # metrics
         self.wins = 0
@@ -101,22 +101,24 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before updating the policy.
         """
-        #self.iterator += 1
-        #if self.iterator % 50 == 0 or self.iterator == 1:
-        #    print("%s : %s / 500" % (str(datetime.now()), self.iterator))
+        self.iterator += 1
         print("-- roll out end --")
-        self.eval_at()
-        self.result_list_wins.append(self.wins)
-        self.result_list_reward.append(self.avg_reward)
-        self.result_list_difference.append(self.avg_difference)
-        self.result_list_steps_per_win.append(self.steps)
-        self.result_list_commitment.append(self.avg_commitment)
-        self.result_list_steps_per_episode.append(self.avg_steps_per_episode)
-        self.result_list_actions.append(self.number_of_actions)
-        self.result_list_distance.append(self.distance_traveled)
-        self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment, \
-            self.avg_steps_per_episode, self.number_of_actions, self.distance_traveled,\
-            self.avg_difference = 0, 0, 0, 0, 0, 0, 0, 0, 0
+        print("-- iterator: {} at {}".format(self.iterator, str(datetime.now())))
+        # only eval at every n-th rollout
+        eval_frequency = 50
+        if self.iterator % eval_frequency == 0:
+            self.eval_at()
+            self.result_list_wins.append(self.wins)
+            self.result_list_reward.append(self.avg_reward)
+            self.result_list_difference.append(self.avg_difference)
+            self.result_list_steps_per_win.append(self.steps)
+            self.result_list_commitment.append(self.avg_commitment)
+            self.result_list_steps_per_episode.append(self.avg_steps_per_episode)
+            self.result_list_actions.append(self.number_of_actions)
+            self.result_list_distance.append(self.distance_traveled)
+            self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment, \
+                self.avg_steps_per_episode, self.number_of_actions, self.distance_traveled,\
+                self.avg_difference = 0, 0, 0, 0, 0, 0, 0, 0, 0
         pass
 
     def _on_training_end(self) -> None:
@@ -131,6 +133,7 @@ class CustomCallback(BaseCallback):
                            actions=self.result_list_actions, distance=self.result_list_distance,
                            random_distribution_values=self.random_distribution_values, baseline_difference=self.result_list_difference)
         # todo all in one line
+        # reset all logging results
         self.result_list_reward = []
         self.result_list_wins = []
         self.result_list_steps_per_win = []
@@ -144,17 +147,24 @@ class CustomCallback(BaseCallback):
         pass
 
     def eval_at(self):
+        '''
+        This method serves as a test run after n rollouts.
+        It will run for self.episodes episodes.
+        Winning the environment is defined by the numeric value of self.eval_steps_per_episode
+        '''
         env = self.model.get_env()
         model = self.model
-        #env.seed(self.seed)
+        # env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
         self.last_distribution_values = [None] * self.distribution_value_number
         for i in range(self.episodes):
+
             # todo random distribution for action sampling
             # np.clip(np.random.normal(0, 33, 100), -100, 100)
             # np.random.uniform(-100, 100)
-            #random_distri = np.clip(np.random.normal(0, 30, self.eval_steps_per_episode), -90, 90)
-            #random_distri = np.random.uniform(-90, 90, self.eval_steps_per_episode)
+            # random_distri = np.clip(np.random.normal(0, 30, self.eval_steps_per_episode), -90, 90)
+            # random_distri = np.random.uniform(-90, 90, self.eval_steps_per_episode)
+
             _actions = 0
             _commitment = 0
             _env_steps = 0
@@ -163,6 +173,7 @@ class CustomCallback(BaseCallback):
             distribution = []
             dist_per_episode = []
             obs = env.reset()
+            # One episode:
             for e in range(self.eval_steps_per_episode):
                 action, _states = model.predict(obs)
                 # todo overwriting action with random sample
@@ -171,7 +182,10 @@ class CustomCallback(BaseCallback):
 
                 optimal_angle = get_optimal_step(obs[0][0], obs[0][1])[0]
                 obs, rewards, done, info = env.step(action)
+
+                # logging
                 _actions += 1
+                # todo log random distribution value for plotting
                 #self.random_distribution_values.append([random_distri[e]])
                 _commitment += int(action[0][1]*10)
                 _env_steps += _commitment
@@ -180,27 +194,26 @@ class CustomCallback(BaseCallback):
                 self.distance_traveled += float(info[0]["distance"])
                 trajectory.append(list(obs[0]))
                 distribution.append(list(info[0]["wind_values"]))
-                #env.render()
+
+                # check win / check done
                 if e >= self.eval_steps_per_episode-1:
                     done = True
                     self.wins += 1
                     self.steps += _actions
-                    print("Win")
                 if done:
-                    print("Done")
-                    print(e)
                     self.last_trajectories[i % self.trajectory_number] = trajectory
                     self.last_distribution_values[i % self.distribution_value_number] = distribution
                     break
+
+            # logging
             for sublist in distribution:
                 for value in sublist:
                     dist_per_episode.append(value)
             self.complete_distribution.append(dist_per_episode)
             self.avg_steps_per_episode = _env_steps
-            self.number_of_actions = _actions
+            self.number_of_actions += _actions
             self.avg_commitment += _commitment / _actions
             self.avg_difference = self.avg_difference / e
-
 
         try:
             self.steps = self.steps / self.wins
@@ -208,7 +221,7 @@ class CustomCallback(BaseCallback):
             self.steps = self.eval_steps_per_episode
         self.wins = self.wins / self.episodes
         self.avg_reward = self.avg_reward / self.episodes
-        self.avg_difference = self.avg_difference / self.episodes
+        self.avg_difference = self.avg_difference
         self.distance_traveled = self.distance_traveled / self.episodes
         self.avg_commitment = self.avg_commitment / self.episodes
         self.number_of_actions = self.number_of_actions / self.episodes
@@ -216,7 +229,24 @@ class CustomCallback(BaseCallback):
 
     def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution, avg_steps,
                       complete_distribution, actions, distance, random_distribution_values, baseline_difference):
-        # todo get mode for dir structure
+        '''
+        Args:
+            rewards: avg_reward per over episodes per evaluated rollout
+            wins: win percentage per over episodes per evaluated rollout
+            steps_per_win: how many steps had to be taken to achieve the goal
+            commitment: avg commitment agent took (1 for min; 10 for max)
+            trajectory: agents trajectories from last 10 episode after learning
+            distribution: wind distribution from last 10 episode after learning
+            avg_steps: avg number of steps agent took in an episode
+            complete_distribution: all wind values through the whole evaluation process
+            actions: avg number of actions the agent took in an episode
+            distance: avg distance the agent covered in an episode
+            random_distribution_values: only used when comparing to random action samples (WIP)
+            baseline_difference: average absolute different in chosen angle between agent and algorithmic_baseline.py
+        Returns:
+            writes all metrics into different files
+        '''
+
         if not os.path.exists("logs/{}".format(self.mode)):
             os.makedirs("logs/{}".format(self.mode))
         now = datetime.now()
