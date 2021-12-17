@@ -38,6 +38,8 @@ if __name__ == "__main__":
     seeds = [122, 959, 41, 734, 115]
     # set mode(s) ["min", "max", "dynamic"]
     modes = ["min"]
+
+    # run with one random seed
     ppo_agent_learn(modes=modes, seeds=seeds)
     # run without seeds
-    # ppo_agent_learn(modes)
+    # ppo_agent_learn(modes=modes)

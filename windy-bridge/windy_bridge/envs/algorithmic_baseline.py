@@ -30,7 +30,3 @@ def get_optimal_step(x_pos, y_pos, commitment=1):
     x_pos = x_pos + math.cos(sol_angle) * STEP_SIZE
 
     return sol_angle, x_pos, y_pos
-
-
-def calc_different(algo_action, agent_action):
-    return 1
