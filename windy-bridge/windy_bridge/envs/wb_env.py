@@ -54,7 +54,7 @@ class WindyBridgeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(2,), dtype=np.float32)
         self.step_count = 0
-        self.max_steps = 2048 # maximum number of steps per learning epoch
+        self.max_steps = 2048*16 # maximum number of steps per learning epoch
         self.noise_distribution = OrnsteinUhlenbeckActionNoise(theta=0.01, mu=0.1, sigma=0.1, seed=np.random.randint(1000))
         self.wind_distribution_values = []
         self.done = False
@@ -74,16 +74,16 @@ class WindyBridgeEnv(gym.Env):
 
             if self.step_count >= self.max_steps-1:
                 self.done = True
-                self.agent.reward += 10.0
+                self.agent.reward += 100.0
             elif not self.bridge.on_bridge(self.agent.y):
                 self.done = True
-                self.agent.reward -= 10.0
+                self.agent.reward -= 100.0
             else:
                 self.env_step(angle, commitment - 1)
 
     def step(self, action):
         self.done = False
-        self.agent.reward = -0.5
+        self.agent.reward = -0.1
         angle = action[0] * 100
         commitment = int(action[1]*10)
         self.env_step(angle, commitment)
@@ -105,14 +105,6 @@ class WindyBridgeEnv(gym.Env):
         self.agent.pos = (self.agent.x, self.agent.y)
         self.step_count = 0
         return initial_state
-
-    #def render(self, close=False, delay=True):
-    #    #SCREEN.fill("black")
-    #    if delay:
-    #        time.sleep(self.render_delay)
-    #    self.bridge.draw_bridge()
-    #    self.agent.draw_agent()
-    #    pygame.display.update()
 
     def _get_game_state(self):
         state = [self.agent.x, self.agent.y]

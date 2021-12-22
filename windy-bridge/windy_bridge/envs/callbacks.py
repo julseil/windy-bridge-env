@@ -20,7 +20,7 @@ class CustomCallback(BaseCallback):
         # self.seed = seed
         self.mode = mode
         self.episodes = 50
-        self.eval_steps_per_episode = 500
+        self.eval_steps_per_episode = 250
         # metrics
         self.wins = 0
         self.losses = 0
@@ -48,6 +48,12 @@ class CustomCallback(BaseCallback):
         self.last_distribution_values = []
         self.distribution_value_number = 10
         self.iterator = 0
+        # histogram logs
+        self.histogram_agent_angles = []
+        self.histogram_algo_angles = []
+        self.histogram_distribution = []
+        self.histogram_agent_y = []
+
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
 
@@ -102,11 +108,11 @@ class CustomCallback(BaseCallback):
         This event is triggered before updating the policy.
         """
         self.iterator += 1
-        print("-- roll out end --")
-        print("-- iterator: {} at {}".format(self.iterator, str(datetime.now())))
         # only eval at every n-th rollout
-        eval_frequency = 50
+        eval_frequency = 10
         if self.iterator % eval_frequency == 0:
+            print("-- eval rollout reached --")
+            print("-- iterator: {} at {}".format(self.iterator, str(datetime.now())))
             self.eval_at()
             self.result_list_wins.append(self.wins)
             self.result_list_reward.append(self.avg_reward)
@@ -119,6 +125,9 @@ class CustomCallback(BaseCallback):
             self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment, \
                 self.avg_steps_per_episode, self.number_of_actions, self.distance_traveled,\
                 self.avg_difference = 0, 0, 0, 0, 0, 0, 0, 0, 0
+            # write histogram data
+            self.write_histograms(self.iterator)
+            self.histogram_agent_angles, self.histogram_algo_angles, self.histogram_distribution, self.histogram_agent_y = [], [], [], []
         pass
 
     def _on_training_end(self) -> None:
@@ -195,6 +204,12 @@ class CustomCallback(BaseCallback):
                 trajectory.append(list(obs[0]))
                 distribution.append(list(info[0]["wind_values"]))
 
+                # log histogram data
+                self.histogram_agent_angles.append(action[0][0]*100)
+                self.histogram_algo_angles.append(optimal_angle)
+                self.histogram_distribution.append(info[0]["wind_values"][0])
+                self.histogram_agent_y.append(obs[0][1])
+
                 # check win / check done
                 if e >= self.eval_steps_per_episode-1:
                     done = True
@@ -247,8 +262,8 @@ class CustomCallback(BaseCallback):
             writes all metrics into different files
         '''
 
-        if not os.path.exists("logs/{}".format(self.mode)):
-            os.makedirs("logs/{}".format(self.mode))
+        if not os.path.exists("logs/{}/histograms".format(self.mode)):
+            os.makedirs("logs/{}/histograms".format(self.mode))
         now = datetime.now()
         dt_string = now.strftime("%Y_%m_%d-%H%M%S")
         with open("logs/{}/rewards_{}.txt".format(self.mode, dt_string), "w+") as a:
@@ -276,4 +291,15 @@ class CustomCallback(BaseCallback):
         with open("logs/{}/optimum_deviation_{}.txt".format(self.mode, dt_string), "w+") as l:
             l.write(str(baseline_difference))
 
+    def write_histograms(self, iterator):
+        if not os.path.exists("logs/{}/histograms".format(self.mode)):
+            os.makedirs("logs/{}/histograms".format(self.mode))
+        with open("logs/{}/histograms/{}_agent_angles.txt".format(self.mode, iterator), "w+") as a:
+            a.write(str(self.histogram_agent_angles))
+        with open("logs/{}/histograms/{}_algo_angles.txt".format(self.mode, iterator), "w+") as b:
+            b.write(str(self.histogram_algo_angles))
+        with open("logs/{}/histograms/{}_distribution.txt".format(self.mode, iterator), "w+") as c:
+            c.write(str(self.histogram_distribution))
+        with open("logs/{}/histograms/{}_agent_y.txt".format(self.mode, iterator), "w+") as d:
+            d.write(str(self.histogram_agent_y))
 
