@@ -29,14 +29,15 @@ def ppo_agent_learn(modes, learning_steps=1024000, seeds=None): #1024000/4
         for mode in modes:
             print(f">>>>> (without seeds) mode: {mode}")
             env = make_vec_env("windy_bridge:windy_bridge-v0", env_kwargs={"mode": mode})
-            model = PPO("MlpPolicy", env, verbose=0, n_steps=2048*4)
+            model = PPO("MlpPolicy", env, verbose=0, n_steps=2048*2)
+            #model = A2C("MlpPolicy", env, verbose=0, n_steps=5)
             callback = CustomCallback(mode=mode)
             model.learn(total_timesteps=learning_steps, callback=callback)
 
 
 if __name__ == "__main__":
     # set mode(s) ["min", "max", "dynamic"]
-    modes = ["min"]
+    modes = ["min", "max", "dynamic"]
 
     # run with one random seed
     #ppo_agent_learn(modes=modes, seeds=seeds)

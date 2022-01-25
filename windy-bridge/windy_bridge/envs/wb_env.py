@@ -44,10 +44,16 @@ class Agent:
         self.reward = 0
 
 
+def convert_to_angle(normalized_angle):
+    return -90 + (normalized_angle * 180)
+
+
 class WindyBridgeEnv(gym.Env):
     def __init__(self, mode="N/A"):
         super(WindyBridgeEnv, self).__init__()
         self.mode = mode
+        # self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
+        # normalized actionspace 0.0 = -90°; 0.5 = 0°; 1.0 = 90°
         self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
         self.agent = Agent(0, 0)
         self.bridge = VirtualBridge(BRIDGE_WIDTH)
@@ -55,35 +61,44 @@ class WindyBridgeEnv(gym.Env):
                                             shape=(2,), dtype=np.float32)
         self.step_count = 0
         self.max_steps = 2048*16 # maximum number of steps per learning epoch
-        self.noise_distribution = OrnsteinUhlenbeckActionNoise(theta=0.01, mu=0.1, sigma=0.1, seed=np.random.randint(1000))
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(theta=0.01, mu=0.1, sigma=0.1)
         self.wind_distribution_values = []
+        self.current_wind_value = 0
         self.done = False
 
     def env_step(self, angle, commitment):
         if commitment > 0:
-            wind_value = self.noise_distribution.__call__() * 4
+            self.current_wind_value = self.noise_distribution.__call__() * 4
+            # todo clip wind value with step size
+            if self.current_wind_value < -5:
+                self.current_wind_value = -5.0
+            elif self.current_wind_value > 5:
+                self.current_wind_value = 5.0
             if angle < 0:
-                self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
+                self.agent.y += SPEED * math.sin(math.radians(angle)) + self.current_wind_value
             else:
-                self.agent.y += SPEED * math.sin(math.radians(angle)) + wind_value
+                self.agent.y += SPEED * math.sin(math.radians(angle)) + self.current_wind_value
             self.agent.x += SPEED * math.cos(math.radians(angle))
 
             # logging
             self.step_count += 1
-            self.wind_distribution_values.append(wind_value)
+            self.wind_distribution_values.append(self.current_wind_value)
 
             if self.step_count >= self.max_steps-1:
                 self.done = True
-                self.agent.reward += 100.0
+                # no reward for reaching the "goal"
+                # self.agent.reward += 100.0
             elif not self.bridge.on_bridge(self.agent.y):
                 self.done = True
-                self.agent.reward -= 100.0
+                self.agent.reward -= 100.0 # /30
             else:
                 self.env_step(angle, commitment - 1)
 
     def step(self, action):
+
         self.done = False
         self.agent.reward = -0.1
+        # angle = convert_to_angle(action[0])
         angle = action[0] * 100
         commitment = int(action[1]*10)
         self.env_step(angle, commitment)
@@ -98,7 +113,7 @@ class WindyBridgeEnv(gym.Env):
 
     def reset(self):
         initial_state = [0, 0]
-        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4, seed=np.random.randint(1000))
+        self.noise_distribution = OrnsteinUhlenbeckActionNoise(mu=0.4, sigma=0.4)
         self.agent.x = 0
         self.agent.old_x = 0
         self.agent.y = 0

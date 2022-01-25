@@ -14,12 +14,15 @@ class CustomCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, mode, verbose=0, seed=0):
+    def __init__(self, mode, verbose=0, seed=42):
         super(CustomCallback, self).__init__(verbose)
         # general
-        # self.seed = seed
+        self.seed = seed
         self.mode = mode
-        self.episodes = 50
+        self.episodes = 50 # 50
+        self.seed_list = [x * self.seed for x in range(0, (self.episodes))]
+        print(self.seed_list)
+        print(len(self.seed_list))
         self.eval_steps_per_episode = 400
         # metrics
         self.wins = 0
@@ -48,6 +51,8 @@ class CustomCallback(BaseCallback):
         self.last_distribution_values = []
         self.distribution_value_number = 10
         self.iterator = 0
+        self.last_actions = []
+        self.last_rewards = []
         # histogram logs
         self.histogram_agent_angles = []
         self.histogram_algo_angles = []
@@ -140,7 +145,8 @@ class CustomCallback(BaseCallback):
                            trajectory=self.last_trajectories, distribution=self.last_distribution_values,
                            avg_steps=self.result_list_steps_per_episode, complete_distribution=self.complete_distribution,
                            actions=self.result_list_actions, distance=self.result_list_distance,
-                           random_distribution_values=self.random_distribution_values, baseline_difference=self.result_list_difference)
+                           random_distribution_values=self.random_distribution_values, baseline_difference=self.result_list_difference,
+                           last_ten_actions=self.last_actions, last_ten_rewards=self.last_rewards)
         # todo all in one line
         # reset all logging results
         self.result_list_reward = []
@@ -163,11 +169,13 @@ class CustomCallback(BaseCallback):
         '''
         env = self.model.get_env()
         model = self.model
-        # env.seed(self.seed)
         self.last_trajectories = [None] * self.trajectory_number
         self.last_distribution_values = [None] * self.distribution_value_number
-        for i in range(self.episodes):
-
+        self.last_actions = [None] * self.trajectory_number
+        self.last_rewards = [None] * self.trajectory_number
+        # todo updated seed from seed list has to go here. otherwise each episode gets exact same seed. => wanted behavior: every X episodes get the same X seeds
+        for i in range(0, self.episodes):
+            env.seed(self.seed_list[i])
             # todo random distribution for action sampling
             # np.clip(np.random.normal(0, 33, 100), -100, 100)
             # np.random.uniform(-100, 100)
@@ -178,15 +186,22 @@ class CustomCallback(BaseCallback):
             _commitment = 0
             _env_steps = 0
             self.avg_difference = 0
-            trajectory = []
-            distribution = []
+
+            # last ten logging
+            episode_trajectory = []
+            episode_distribution = []
+            episode_actions = []
+            episode_rewards = []
+
             dist_per_episode = []
             obs = env.reset()
             # One episode:
             for e in range(self.eval_steps_per_episode):
                 action, _states = model.predict(obs)
                 # todo overwriting action with random sample
-                #action = [[int(random_distri[e])/100, 0.1]]
+                #action = [[int(random_distri[e])/100, 0.1]] # min
+                #action = [[int(random_distri[e]) / 100, np.random.randint(10) / 10]] # dynamic
+                #action = [[int(random_distri[e]) / 100, 1.0]] # max
                 #action = [[0, 0.1]]
 
                 optimal_angle = get_optimal_step(obs[0][0], obs[0][1])[0]
@@ -195,14 +210,18 @@ class CustomCallback(BaseCallback):
                 # logging
                 _actions += 1
                 # todo log random distribution value for plotting
-                #self.random_distribution_values.append([random_distri[e]])
+                # self.random_distribution_values.append([random_distri[e]])
                 _commitment += int(action[0][1]*10)
                 _env_steps += _commitment
                 self.avg_difference += abs(optimal_angle - action[0][0]*100)
                 self.avg_reward += float(rewards)
                 self.distance_traveled += float(info[0]["distance"])
-                trajectory.append(list(obs[0]))
-                distribution.append(list(info[0]["wind_values"]))
+
+                # last ten logging
+                episode_trajectory.append(list(obs[0]))
+                episode_distribution.append(info[0]["wind_values"])
+                episode_actions.append(action[0][0])
+                episode_rewards.append(list(rewards)[0])
 
                 # log histogram data
                 self.histogram_agent_angles.append(action[0][0]*100)
@@ -216,12 +235,14 @@ class CustomCallback(BaseCallback):
                     self.wins += 1
                     self.steps += _actions
                 if done:
-                    self.last_trajectories[i % self.trajectory_number] = trajectory
-                    self.last_distribution_values[i % self.distribution_value_number] = distribution
+                    self.last_trajectories[i % self.trajectory_number] = episode_trajectory
+                    self.last_distribution_values[i % self.distribution_value_number] = episode_distribution
+                    self.last_actions[i % self.trajectory_number] = episode_actions
+                    self.last_rewards[i % self.trajectory_number] = episode_rewards
                     break
 
             # logging
-            for sublist in distribution:
+            for sublist in episode_distribution:
                 for value in sublist:
                     dist_per_episode.append(value)
             self.complete_distribution.append(dist_per_episode)
@@ -243,7 +264,8 @@ class CustomCallback(BaseCallback):
         self.avg_steps_per_episode = self.avg_steps_per_episode / self.episodes
 
     def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution, avg_steps,
-                      complete_distribution, actions, distance, random_distribution_values, baseline_difference):
+                      complete_distribution, actions, distance, random_distribution_values, baseline_difference,
+                      last_ten_actions, last_ten_rewards):
         '''
         Args:
             rewards: avg_reward per over episodes per evaluated rollout
@@ -290,6 +312,11 @@ class CustomCallback(BaseCallback):
             k.write(str(random_distribution_values))
         with open("logs/{}/optimum_deviation_{}.txt".format(self.mode, dt_string), "w+") as l:
             l.write(str(baseline_difference))
+        with open("logs/{}/last_ten_actions_{}.txt".format(self.mode, dt_string), "w+") as m:
+            m.write(str(last_ten_actions))
+        with open("logs/{}/last_ten_rew{}.txt".format(self.mode, dt_string), "w+") as n:
+            n.write(str(last_ten_rewards))
+
 
     def write_histograms(self, iterator):
         if not os.path.exists("logs/{}/histograms".format(self.mode)):

@@ -56,7 +56,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.dt = dt
         self.x0 = x0
         self.x = 0
-        self.seed = np.random.randint(1000)
+        self.seed = seed
         np.random.seed(self.seed)
         self.reset()
 

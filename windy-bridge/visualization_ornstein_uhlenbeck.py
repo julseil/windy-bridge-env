@@ -30,11 +30,11 @@ def plot_distribution(_x, _y):
 # [4] mean reversion level;
 # [5] influence of randomness (0 = flat line)
 # (0, total_timesteps/10, total_timesteps, 1.1, 0, 0.3)
-np.random.seed(np.random.randint(10000))
+np.random.seed(1)
 x, y = ornstein_uhlenbeck(0, 2500, 2500, 0.01, 0.1, 0.1)
 print(max(y))
 print(min(y))
-#plot_distribution(x,y)
+plot_distribution(x,y)
 
 # todo get rid of length variable
 # for t -> append with each next? / update linspace with each new step
