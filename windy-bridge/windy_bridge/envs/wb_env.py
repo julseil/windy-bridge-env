@@ -48,13 +48,88 @@ def convert_to_angle(normalized_angle):
     return -90 + (normalized_angle * 180)
 
 
+def convert_discrete_to_action(number, mode="dynamic"):
+    if mode == "dynamic":
+        if number == 0:
+            return [-90, 1]
+        elif number == 1:
+            return [-90, 5]
+        elif number == 2:
+            return [-90, 10]
+        elif number == 3:
+            return [-90, 15]
+        elif number == 4:
+            return [0, 1]
+        elif number == 5:
+            return [0, 5]
+        elif number == 6:
+            return [0, 10]
+        elif number == 7:
+            return [0, 15]
+        elif number == 8:
+            return [90, 1]
+        elif number == 9:
+            return [90, 5]
+        elif number == 10:
+            return [90, 10]
+        elif number == 11:
+            return [90, 15]
+        else:
+            print("Invalid action input")
+            print(number)
+            return -1
+    elif mode == "min":
+        if number == 0:
+            return [-90, 1]
+        elif number == 1:
+            return [-45, 1]
+        elif number == 2:
+            return [0, 1]
+        elif number == 3:
+            return [45, 1]
+        elif number == 4:
+            return [90, 1]
+        else:
+            print("Invalid action input")
+            print(number)
+            return -1
+    elif mode == "max":
+        if number == 0:
+            return [-90, 10]
+        elif number == 1:
+            return [-45, 10]
+        elif number == 2:
+            return [0, 10]
+        elif number == 3:
+            return [45, 10]
+        elif number == 4:
+            return [90, 10]
+        else:
+            print("Invalid action input")
+            print(number)
+            return -1
+    else:
+        print("Invalid mode")
+        print(mode)
+        return -1
+
+
 class WindyBridgeEnv(gym.Env):
-    def __init__(self, mode="N/A"):
+    def __init__(self, mode="N/A", actionspace="continuous"):
         super(WindyBridgeEnv, self).__init__()
         self.mode = mode
-        # self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
-        # normalized actionspace 0.0 = -90°; 0.5 = 0°; 1.0 = 90°
-        self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
+        # discrete action space A_angle = {-90, 0, 90}, A_commitment = {1,5,10,15} => 12 actions
+        # discrete action space A_angle = {-90, -45, 0, 45, 90}, A_commitment = {1 or 10} => 5 actions
+        if actionspace == "continuous":
+            self.action_space = spaces.Box(np.array([-0.9, MIN_AS[self.mode]]), np.array([0.9, MAX_AS[self.mode]]))
+        elif actionspace == "discrete":
+            if mode == "dynamic":
+                self.action_space = spaces.Discrete(12)
+            else:
+                self.action_space = spaces.Discrete(5)
+        else:
+            print("Invalid action space parameter")
+            self.action_space = -1
         self.agent = Agent(0, 0)
         self.bridge = VirtualBridge(BRIDGE_WIDTH)
         self.observation_space = spaces.Box(low=0, high=255,
@@ -95,12 +170,11 @@ class WindyBridgeEnv(gym.Env):
                 self.env_step(angle, commitment - 1)
 
     def step(self, action):
-
+        action = convert_discrete_to_action(action, self.mode)
         self.done = False
         self.agent.reward = -0.1
-        # angle = convert_to_angle(action[0])
-        angle = action[0] * 100
-        commitment = int(action[1]*10)
+        angle = action[0]
+        commitment = action[1]
         self.env_step(angle, commitment)
         self.agent.reward += (self.agent.x - self.agent.old_x)
         distance = self.agent.x - self.agent.old_x
@@ -124,3 +198,6 @@ class WindyBridgeEnv(gym.Env):
     def _get_game_state(self):
         state = [self.agent.x, self.agent.y]
         return state
+
+    def get_mode(self):
+        return self.mode

@@ -6,6 +6,7 @@ import numpy as np
 import time
 
 from .algorithmic_baseline import get_optimal_step
+from .wb_env import convert_discrete_to_action
 
 
 class CustomCallback(BaseCallback):
@@ -21,8 +22,6 @@ class CustomCallback(BaseCallback):
         self.mode = mode
         self.episodes = 50 # 50
         self.seed_list = [x * self.seed for x in range(0, (self.episodes))]
-        print(self.seed_list)
-        print(len(self.seed_list))
         self.eval_steps_per_episode = 400
         # metrics
         self.wins = 0
@@ -114,7 +113,7 @@ class CustomCallback(BaseCallback):
         """
         self.iterator += 1
         # only eval at every n-th rollout
-        eval_frequency = 10
+        eval_frequency = 8192
         if self.iterator % eval_frequency == 0:
             print("-- eval rollout reached --")
             print("-- iterator: {} at {}".format(self.iterator, str(datetime.now())))
@@ -211,20 +210,20 @@ class CustomCallback(BaseCallback):
                 _actions += 1
                 # todo log random distribution value for plotting
                 # self.random_distribution_values.append([random_distri[e]])
-                _commitment += int(action[0][1]*10)
+                _commitment += convert_discrete_to_action(action)[1]
                 _env_steps += _commitment
-                self.avg_difference += abs(optimal_angle - action[0][0]*100)
+                self.avg_difference += abs(optimal_angle - convert_discrete_to_action(action)[0])
                 self.avg_reward += float(rewards)
                 self.distance_traveled += float(info[0]["distance"])
 
                 # last ten logging
                 episode_trajectory.append(list(obs[0]))
                 episode_distribution.append(info[0]["wind_values"])
-                episode_actions.append(action[0][0])
+                episode_actions.append(convert_discrete_to_action(action)[0])
                 episode_rewards.append(list(rewards)[0])
 
                 # log histogram data
-                self.histogram_agent_angles.append(action[0][0]*100)
+                self.histogram_agent_angles.append(convert_discrete_to_action(action)[0])
                 self.histogram_algo_angles.append(optimal_angle)
                 self.histogram_distribution.append(info[0]["wind_values"][0])
                 self.histogram_agent_y.append(obs[0][1])
@@ -249,7 +248,10 @@ class CustomCallback(BaseCallback):
             self.avg_steps_per_episode = _env_steps
             self.number_of_actions += _actions
             self.avg_commitment += _commitment / _actions
-            self.avg_difference = self.avg_difference / e
+            try:
+                self.avg_difference = self.avg_difference / e
+            except ZeroDivisionError as ze:
+                self.avg_difference = 0
 
         try:
             self.steps = self.steps / self.wins
