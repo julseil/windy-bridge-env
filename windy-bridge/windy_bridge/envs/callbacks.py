@@ -26,14 +26,13 @@ class CustomCallback(BaseCallback):
         self.eval_steps_per_episode = 400
         # metrics
         self.wins = 0
-        self.losses = 0
-        self.avg_reward = 0
-        self.avg_difference = 0
+        self.avg_reward = []
+        self.avg_difference = []
         self.steps = 0
-        self.avg_commitment = 0
-        self.avg_steps_per_episode = 0
-        self.number_of_actions = 0
-        self.distance_traveled = 0
+        self.avg_commitment = []
+        self.avg_steps_per_episode = []
+        self.number_of_actions = []
+        self.distance_traveled = []
         # metrics lists
         self.result_list_reward = []
         self.result_list_wins = []
@@ -127,9 +126,18 @@ class CustomCallback(BaseCallback):
             self.result_list_steps_per_episode.append(self.avg_steps_per_episode)
             self.result_list_actions.append(self.number_of_actions)
             self.result_list_distance.append(self.distance_traveled)
-            self.wins, self.losses, self.avg_reward, self.steps, self.avg_commitment, \
-                self.avg_steps_per_episode, self.number_of_actions, self.distance_traveled,\
-                self.avg_difference = 0, 0, 0, 0, 0, 0, 0, 0, 0
+            self.wins, self.steps, self.avg_difference = 0, 0, 0
+
+            # lineplot metrics
+            self.avg_reward = []
+            self.distance_traveled = []
+            self.avg_commitment = []
+            self.number_of_actions = []
+            self.avg_steps_per_episode = []
+
+
+
+
             # write histogram data
             self.write_histograms(self.iterator)
             self.histogram_agent_angles, self.histogram_algo_angles, self.histogram_distribution, self.histogram_agent_y = [], [], [], []
@@ -214,8 +222,8 @@ class CustomCallback(BaseCallback):
                 _commitment += int(action[0][1]*10)
                 _env_steps += _commitment
                 self.avg_difference += abs(optimal_angle - action[0][0]*100)
-                self.avg_reward += float(rewards)
-                self.distance_traveled += float(info[0]["distance"])
+                self.avg_reward.append(float(rewards))
+                self.distance_traveled.append(float(info[0]["distance"]))
 
                 # last ten logging
                 episode_trajectory.append(list(obs[0]))
@@ -246,22 +254,26 @@ class CustomCallback(BaseCallback):
                 for value in sublist:
                     dist_per_episode.append(value)
             self.complete_distribution.append(dist_per_episode)
-            self.avg_steps_per_episode = _env_steps
-            self.number_of_actions += _actions
-            self.avg_commitment += _commitment / _actions
+            self.avg_steps_per_episode.append(_env_steps)
+            self.number_of_actions.append(_actions)
+            self.avg_commitment.append(_commitment / _actions)
             self.avg_difference = self.avg_difference / e
 
+        # lineplot logging might break this
         try:
             self.steps = self.steps / self.wins
         except ZeroDivisionError:
             self.steps = self.eval_steps_per_episode
+        # lineplot from self.avg_reward = self.avg_reward / self.episodes -> self.avg_reward = [self.avg_reward]
+        # redundant code below
+        self.avg_reward = self.avg_reward
+        self.distance_traveled = self.distance_traveled
+        self.avg_commitment = self.avg_commitment
+        self.number_of_actions = self.number_of_actions
+        self.avg_steps_per_episode = self.avg_steps_per_episode
+
         self.wins = self.wins / self.episodes
-        self.avg_reward = self.avg_reward / self.episodes
         self.avg_difference = self.avg_difference
-        self.distance_traveled = self.distance_traveled / self.episodes
-        self.avg_commitment = self.avg_commitment / self.episodes
-        self.number_of_actions = self.number_of_actions / self.episodes
-        self.avg_steps_per_episode = self.avg_steps_per_episode / self.episodes
 
     def write_results(self, rewards, wins, steps_per_win, commitment, trajectory, distribution, avg_steps,
                       complete_distribution, actions, distance, random_distribution_values, baseline_difference,
